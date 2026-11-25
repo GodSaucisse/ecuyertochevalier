@@ -1,5 +1,7 @@
 // Le monde : terrain, château de Montclair, village, église, terrain d'entraînement, forêt.
 import * as THREE from 'three';
+import { Tex, metricBoxUV, metricCylinderUV } from './textures.js';
+import { createSky, SKY } from './sky.js';
 
 // Générateur aléatoire "à graine" : le monde est identique à chaque partie.
 function mulberry32(seed) {
@@ -20,66 +22,74 @@ export function buildWorld(scene) {
   const boxes = [];   // obstacles rectangulaires { minX, maxX, minZ, maxZ, top }
   const circles = []; // obstacles ronds { x, z, r, top }
   const animated = []; // objets à animer chaque image
+  const bare = [];     // zones sans herbe (chemins, cours…)
 
   const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...extra });
+  /** Matériau texturé. Les textures sont prévues pour des coordonnées en mètres. */
+  const tmat = (name, extra = {}, repeat = null) => {
+    const t = Tex[name]();
+    let map = t.map, normalMap = t.normalMap;
+    if (repeat) {
+      map = map.clone(); normalMap = normalMap.clone();
+      map.repeat.set(repeat[0], repeat[1]); normalMap.repeat.set(repeat[0], repeat[1]);
+      map.needsUpdate = normalMap.needsUpdate = true;
+    }
+    return new THREE.MeshStandardMaterial({ map, normalMap, roughness: 0.92, ...extra });
+  };
+  const flat = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 };
   const M = {
-    stone: mat(0x9c968b), stoneDark: mat(0x7d776d), stoneLight: mat(0xb9b09e),
-    slate: mat(0x4b505c), thatch: mat(0xc9a35a), plaster: mat(0xe3d6b4),
-    timber: mat(0x5a3b22), wood: mat(0x8a6240), door: mat(0x4a2f1a),
-    dark: mat(0x1e1a16), dirt: mat(0x8b7352, { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }),
-    courtyard: mat(0x9a8a6c, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
-    hay: mat(0xd9b65e), water: mat(0x2c4a5a, { roughness: 0.2 }),
+    stone: tmat('stone'), stoneLight: tmat('stoneLight'), stoneDark: tmat('stone', { color: 0x8a847a }),
+    slate: tmat('slate'), slateCone: tmat('slate', {}, [6, 2.5]), thatch: tmat('thatch'), plaster: tmat('plaster'),
+    timber: tmat('timber'), wood: tmat('wood'), door: tmat('timber', { color: 0x9a8070 }),
+    dark: mat(0x15110d), dirt: tmat('dirt', flat),
+    courtyard: tmat('sand', { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+    hay: tmat('thatch', { color: 0xe8d08a }), water: mat(0x23394a, { roughness: 0.08, metalness: 0.3 }),
   };
 
   // ---------- Ciel, brume et lumière ----------
-  const skyColor = new THREE.Color(0xa9cbe3);
-  scene.fog = new THREE.Fog(skyColor, 55, 175);
-  scene.background = skyColor;
-  {
-    const geo = new THREE.SphereGeometry(320, 24, 12);
-    const colors = [];
-    const top = new THREE.Color(0x5d8fc4), horizon = new THREE.Color(0xc8dceb);
-    const p = geo.attributes.position;
-    for (let i = 0; i < p.count; i++) {
-      const t = clamp(p.getY(i) / 320, 0, 1);
-      const col = horizon.clone().lerp(top, Math.pow(t, 0.6));
-      colors.push(col.r, col.g, col.b);
-    }
-    geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    const sky = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false }));
-    scene.add(sky);
-    animated.push({ update: (dt, camPos) => sky.position.copy(camPos) });
-  }
+  // Soleil bas d'automne, à l'ouest-sud-ouest : longues ombres et lumière dorée
+  const sunOffset = new THREE.Vector3(-70, 32, 38);
+  const sunDir = sunOffset.clone().normalize();
+  scene.fog = new THREE.FogExp2(SKY.fog, 0.0095);
+  const sky = createSky(sunDir);
+  scene.add(sky);
+  animated.push({ update: (dt, camPos) => sky.position.copy(camPos) });
 
-  scene.add(new THREE.HemisphereLight(0xdcecff, 0x55663a, 1.4));
-  const sun = new THREE.DirectionalLight(0xfff0d8, 2.6);
+  scene.add(new THREE.HemisphereLight(0xa8bcd6, 0x4a3f2e, 0.5));
+  const sun = new THREE.DirectionalLight(0xffd6a0, 3.4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -40, right: 40, top: 40, bottom: -40, near: 1, far: 200 });
-  sun.shadow.bias = -0.0004;
-  sun.shadow.normalBias = 0.04;
+  Object.assign(sun.shadow.camera, { left: -45, right: 45, top: 45, bottom: -45, near: 1, far: 260 });
+  sun.shadow.bias = -0.0003;
+  sun.shadow.normalBias = 0.05;
+  sun.shadow.radius = 3;
   scene.add(sun, sun.target);
-  const sunOffset = new THREE.Vector3(35, 60, 25);
 
   // ---------- Sol ----------
   {
     const geo = new THREE.PlaneGeometry(400, 400, 100, 100);
     geo.rotateX(-Math.PI / 2);
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 400, uv.getY(i) * 400);
+    // Grandes taches de couleur pour casser la répétition de la texture
     const colors = [];
-    const base = new THREE.Color(0x6f8f45);
-    for (let i = 0; i < geo.attributes.position.count; i++) {
-      const c = base.clone().offsetHSL((rng() - 0.5) * 0.03, (rng() - 0.5) * 0.1, (rng() - 0.5) * 0.08);
-      colors.push(c.r, c.g, c.b);
+    const p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), z = p.getZ(i);
+      const n = Math.sin(x * 0.05 + Math.sin(z * 0.03) * 2) * 0.5 + Math.sin(z * 0.07 + x * 0.02) * 0.5;
+      const v = 0.85 + n * 0.12 + (rng() - 0.5) * 0.06;
+      colors.push(v, v * (0.98 + n * 0.03), v * 0.95);
     }
     geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+    const t = Tex.grass();
+    const ground = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, map: t.map, normalMap: t.normalMap, roughness: 1 }));
     ground.receiveShadow = true;
     scene.add(ground);
   }
 
   // Collines lointaines
   {
-    const hillMat = mat(0x5d7a3e);
+    const hillMat = mat(0x5a6a3a);
     for (let i = 0; i < 26; i++) {
       const a = (i / 26) * Math.PI * 2 + rng() * 0.2;
       const d = 150 + rng() * 40;
@@ -98,7 +108,7 @@ export function buildWorld(scene) {
 
   /** Boîte posée au sol (y = base). rotY doit être 0 ou ±PI/2. */
   function box(w, h, d, x, y, z, material, { collide = true, rotY = 0, parent = scene, shadow = true } = {}) {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+    const m = new THREE.Mesh(metricBoxUV(new THREE.BoxGeometry(w, h, d), w, h, d), material);
     m.position.set(x, y + h / 2, z);
     m.rotation.y = rotY;
     m.castShadow = shadow;
@@ -113,7 +123,7 @@ export function buildWorld(scene) {
   }
 
   function cylinder(r, h, x, y, z, material, { collide = true, segments = 16, rTop = r } = {}) {
-    const m = new THREE.Mesh(new THREE.CylinderGeometry(rTop, r, h, segments), material);
+    const m = new THREE.Mesh(metricCylinderUV(new THREE.CylinderGeometry(rTop, r, h, segments), r, h), material);
     m.position.set(x, y + h / 2, z);
     m.castShadow = true;
     m.receiveShadow = true;
@@ -134,8 +144,12 @@ export function buildWorld(scene) {
   /** Chemin de terre rectiligne (aligné sur un axe). */
   function path(x1, z1, x2, z2, width, material = M.dirt) {
     const len = Math.hypot(x2 - x1, z2 - z1);
-    const geo = new THREE.PlaneGeometry(x1 === x2 ? width : len, x1 === x2 ? len : width);
+    const pw = x1 === x2 ? width : len, pd = x1 === x2 ? len : width;
+    const geo = new THREE.PlaneGeometry(pw, pd);
     geo.rotateX(-Math.PI / 2);
+    const uv = geo.attributes.uv;
+    for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * pw, uv.getY(i) * pd);
+    bare.push({ minX: (x1 + x2) / 2 - pw / 2, maxX: (x1 + x2) / 2 + pw / 2, minZ: (z1 + z2) / 2 - pd / 2, maxZ: (z1 + z2) / 2 + pd / 2 });
     const m = new THREE.Mesh(geo, material);
     m.position.set((x1 + x2) / 2, 0.02, (z1 + z2) / 2);
     m.receiveShadow = true;
@@ -215,7 +229,7 @@ export function buildWorld(scene) {
     // Tours d'angle
     for (const [x, z] of [[-HALF, north], [HALF, north], [-HALF, south], [HALF, south]]) {
       cylinder(3, 10, x, 0, z, M.stone, { segments: 18 });
-      cone(3.5, 4.5, x, 10, z, M.slate, 18);
+      cone(3.5, 4.5, x, 10, z, M.slateCone, 18);
     }
     // Tours de la porte + arche
     for (const x of [-gateHalf, gateHalf]) {
@@ -287,13 +301,13 @@ export function buildWorld(scene) {
     g.position.set(x, 0, z);
     g.rotation.y = rotY;
     scene.add(g);
-    const walls = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M.plaster);
+    const walls = new THREE.Mesh(metricBoxUV(new THREE.BoxGeometry(w, h, d), w, h, d), M.plaster);
     walls.position.y = h / 2;
     walls.castShadow = walls.receiveShadow = true;
     g.add(walls);
     // Colombages
     const beam = (bw, bh, bd, bx, by, bz) => {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), M.timber);
+      const b = new THREE.Mesh(metricBoxUV(new THREE.BoxGeometry(bw, bh, bd), bw, bh, bd), M.timber);
       b.position.set(bx, by, bz);
       b.castShadow = true;
       g.add(b);
@@ -355,8 +369,9 @@ export function buildWorld(scene) {
   // Champ cultivé à l'est du village
   {
     const fx = 38, fz = 38, fw = 16, fd = 22;
+    bare.push({ minX: fx - fw / 2, maxX: fx + fw / 2, minZ: fz - fd / 2, maxZ: fz + fd / 2 });
     const field = new THREE.Mesh(new THREE.PlaneGeometry(fw, fd).rotateX(-Math.PI / 2),
-      mat(0x7a5c3a, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+      tmat('dirt', { color: 0x9a7a5a, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }, [16 / 3, 22 / 3]));
     field.position.set(fx, 0.015, fz);
     field.receiveShadow = true;
     scene.add(field);
@@ -381,7 +396,7 @@ export function buildWorld(scene) {
     scene.add(roof);
     // Clocher
     box(3.6, 11, 3.6, ex, 0, ez - 7.8, M.stoneLight);
-    cone(2.9, 4, ex, 11, ez - 7.8, M.slate, 4, Math.PI / 4);
+    cone(2.9, 4, ex, 11, ez - 7.8, M.slateCone, 4, Math.PI / 4);
     for (const [dx, dz, w, d] of [[0, -1.82, 0.7, 0.1], [0, 1.82, 0.7, 0.1], [-1.82, 0, 0.1, 0.7], [1.82, 0, 0.1, 0.7]]) {
       box(w, 1.4, d, ex + dx, 8.8, ez - 7.8 + dz, M.dark, { collide: false, shadow: false });
     }
@@ -391,7 +406,7 @@ export function buildWorld(scene) {
     apse.position.set(ex, 2.25, ez + 6);
     apse.castShadow = apse.receiveShadow = true;
     scene.add(apse);
-    const apseRoof = new THREE.Mesh(new THREE.ConeGeometry(2.9, 1.8, 16, 1, false, -Math.PI / 2, Math.PI), M.slate);
+    const apseRoof = new THREE.Mesh(new THREE.ConeGeometry(2.9, 1.8, 16, 1, false, -Math.PI / 2, Math.PI), M.slateCone);
     apseRoof.position.set(ex, 5.4, ez + 6);
     apseRoof.castShadow = true;
     scene.add(apseRoof);
@@ -406,7 +421,7 @@ export function buildWorld(scene) {
   // ---------- Terrain d'entraînement (à l'est) ----------
   const YX = 26, YZ = 0, YH = 7;
   {
-    path(YX, YZ - YH + 0.5, YX, YZ + YH - 0.5, 2 * YH - 1, mat(0xa08a62, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
+    path(YX, YZ - YH + 0.5, YX, YZ + YH - 0.5, 2 * YH - 1, M.courtyard);
     const x0 = YX - YH, x1 = YX + YH, z0 = YZ - YH, z1 = YZ + YH;
     const gap = 2;
     const fenceSide = (ax, az, bx, bz) => {
@@ -515,33 +530,56 @@ export function buildWorld(scene) {
       if (trees.some(t => (t.x - x) ** 2 + (t.z - z) ** 2 < 9)) continue;
       trees.push({ x, z, s: 0.8 + rng() * 0.6, pine: rng() < 0.4 });
     }
-    const trunkGeo = new THREE.CylinderGeometry(0.18, 0.28, 2.2, 6);
-    trunkGeo.translate(0, 1.1, 0);
-    const leafGeo = new THREE.IcosahedronGeometry(1.7, 0);
-    leafGeo.translate(0, 3.2, 0);
-    const pineGeo = new THREE.ConeGeometry(1.5, 4, 7);
-    pineGeo.translate(0, 3.6, 0);
-    const trunks = new THREE.InstancedMesh(trunkGeo, mat(0x5b4129), trees.length);
+    const trunkGeo = metricCylinderUV(new THREE.CylinderGeometry(0.16, 0.3, 2.6, 7), 0.25, 2.6);
+    trunkGeo.translate(0, 1.3, 0);
+    const blobGeo = new THREE.IcosahedronGeometry(1.25, 1);
+    // Feuillage irrégulier : on bosselle la sphère
+    {
+      const p = blobGeo.attributes.position;
+      for (let i = 0; i < p.count; i++) {
+        const v = new THREE.Vector3().fromBufferAttribute(p, i);
+        const k = 1 + Math.sin(v.x * 3.1 + v.y * 2.3) * 0.12 + Math.cos(v.z * 2.7 - v.y * 1.9) * 0.1;
+        p.setXYZ(i, v.x * k, v.y * k, v.z * k);
+      }
+      blobGeo.computeVertexNormals();
+    }
+    const pineGeo = new THREE.ConeGeometry(1.5, 4.2, 8, 3);
+    pineGeo.translate(0, 3.8, 0);
+    const pineGeo2 = new THREE.ConeGeometry(1.1, 3, 8, 2);
+    pineGeo2.translate(0, 5.4, 0);
+    const bark = tmat('timber', { color: 0x8a7a6a }, [1, 1.5]);
+    const trunks = new THREE.InstancedMesh(trunkGeo, bark, trees.length);
     const leafTrees = trees.filter(t => !t.pine), pineTrees = trees.filter(t => t.pine);
-    const leaves = new THREE.InstancedMesh(leafGeo, new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), leafTrees.length);
-    const pines = new THREE.InstancedMesh(pineGeo, new THREE.MeshStandardMaterial({ roughness: 0.9, flatShading: true }), pineTrees.length);
+    const foliageMat = new THREE.MeshStandardMaterial({ roughness: 0.95, flatShading: true });
+    const leaves = new THREE.InstancedMesh(blobGeo, foliageMat, leafTrees.length * 4);
+    const pines = new THREE.InstancedMesh(pineGeo, foliageMat, pineTrees.length);
+    const pines2 = new THREE.InstancedMesh(pineGeo2, foliageMat, pineTrees.length);
     const dummy = new THREE.Object3D();
     const col = new THREE.Color();
+    // Palette d'automne : verts fatigués, ors, roux
+    const autumn = [0x5d6e2e, 0x6f7a30, 0xa8862e, 0xc0782a, 0x9a4a22, 0x7a6a2a, 0xb8962e];
     trees.forEach((t, i) => {
       dummy.position.set(t.x, 0, t.z);
       dummy.rotation.set(0, rng() * Math.PI * 2, 0);
-      dummy.scale.setScalar(t.s);
+      dummy.scale.set(t.s, t.s * (1 + rng() * 0.3), t.s);
       dummy.updateMatrix();
       trunks.setMatrixAt(i, dummy.matrix);
       if (Math.hypot(t.x, t.z) < WORLD_RADIUS + 5) circles.push({ x: t.x, z: t.z, r: 0.35 * t.s, top: 99 });
     });
-    leafTrees.forEach((t, i) => {
-      dummy.position.set(t.x, 0, t.z);
-      dummy.rotation.set(rng(), rng() * 6, rng());
-      dummy.scale.set(t.s, t.s * (0.9 + rng() * 0.3), t.s);
-      dummy.updateMatrix();
-      leaves.setMatrixAt(i, dummy.matrix);
-      leaves.setColorAt(i, col.setHSL(0.24 + rng() * 0.06, 0.45, 0.28 + rng() * 0.1));
+    let li = 0;
+    leafTrees.forEach((t) => {
+      const base = autumn[Math.floor(rng() * autumn.length)];
+      for (let k = 0; k < 4; k++) {
+        const a = rng() * Math.PI * 2, d = k === 0 ? 0 : 0.8 + rng() * 0.4;
+        dummy.position.set(t.x + Math.cos(a) * d * t.s, (3.1 + (k === 0 ? 0.7 : rng() * 0.6)) * t.s, t.z + Math.sin(a) * d * t.s);
+        dummy.rotation.set(rng() * 3, rng() * 3, rng() * 3);
+        const sc = t.s * (k === 0 ? 1.15 : 0.8 + rng() * 0.25);
+        dummy.scale.set(sc, sc * 0.85, sc);
+        dummy.updateMatrix();
+        leaves.setMatrixAt(li, dummy.matrix);
+        leaves.setColorAt(li, col.set(base).offsetHSL((rng() - 0.5) * 0.03, 0, (rng() - 0.5) * 0.08));
+        li++;
+      }
     });
     pineTrees.forEach((t, i) => {
       dummy.position.set(t.x, 0, t.z);
@@ -549,9 +587,12 @@ export function buildWorld(scene) {
       dummy.scale.set(t.s, t.s * (0.9 + rng() * 0.4), t.s);
       dummy.updateMatrix();
       pines.setMatrixAt(i, dummy.matrix);
-      pines.setColorAt(i, col.setHSL(0.3 + rng() * 0.04, 0.4, 0.2 + rng() * 0.06));
+      pines2.setMatrixAt(i, dummy.matrix);
+      col.setHSL(0.28 + rng() * 0.04, 0.35, 0.16 + rng() * 0.05);
+      pines.setColorAt(i, col);
+      pines2.setColorAt(i, col);
     });
-    for (const m of [trunks, leaves, pines]) { m.castShadow = true; m.receiveShadow = true; scene.add(m); }
+    for (const m of [trunks, leaves, pines, pines2]) { m.castShadow = true; m.receiveShadow = true; scene.add(m); }
   }
 
   // Rochers épars
@@ -631,5 +672,13 @@ export function buildWorld(scene) {
     }
   }
 
-  return { resolve, update, quintain, circles, boxes };
+  /** Pas d'herbe sur les chemins, dans les cours, sous les bâtiments… */
+  function isBare(x, z) {
+    for (const b of bare) if (x > b.minX - 0.2 && x < b.maxX + 0.2 && z > b.minZ - 0.2 && z < b.maxZ + 0.2) return true;
+    for (const b of boxes) if (x > b.minX - 0.3 && x < b.maxX + 0.3 && z > b.minZ - 0.3 && z < b.maxZ + 0.3) return true;
+    for (const c of circles) if ((x - c.x) ** 2 + (z - c.z) ** 2 < (c.r + 0.2) ** 2) return true;
+    return Math.abs(x) < 19 && z > -59 && z < -21; // intérieur du château
+  }
+
+  return { resolve, update, isBare, quintain, circles, boxes, sun, sunDir };
 }

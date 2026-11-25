@@ -7,30 +7,44 @@ import { UI } from './ui.js';
 import { createNPCs } from './npcs.js';
 import { QuestManager } from './quests.js';
 import { initAudio, playHit, playSwing } from './audio.js';
+import { createEnvironment } from './sky.js';
+import { createPostFX } from './postfx.js';
+import { createGrass } from './grass.js';
+import { createParticles } from './particles.js';
 
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+// Qualité graphique : "haute" sur ordinateur, allégée sur mobile. On peut forcer avec ?qualite=basse ou ?qualite=haute
+const params = new URLSearchParams(location.search);
+const HIGH = params.get('qualite') ? params.get('qualite') === 'haute' : !isTouch;
 
 // ---------- Rendu ----------
-const renderer = new THREE.WebGLRenderer({ antialias: !isTouch });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, isTouch ? 1.5 : 2));
+const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, HIGH ? 1.5 : 1.25));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
+renderer.toneMappingExposure = 1.05;
 document.getElementById('app').appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 600);
 
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  fx.setSize(window.innerWidth, window.innerHeight);
 });
 
 // ---------- Jeu ----------
 const world = buildWorld(scene);
+if (HIGH) world.sun.shadow.mapSize.set(4096, 4096);
+scene.environment = createEnvironment(renderer, world.sunDir);
+scene.environmentIntensity = 1.0;
+const grass = createGrass(scene, world.isBare, { count: HIGH ? 120000 : 35000, radius: HIGH ? 75 : 55 });
+const particles = createParticles(scene, { dust: HIGH ? 400 : 150, leaves: HIGH ? 90 : 40 });
+const fx = createPostFX(renderer, scene, camera, { high: HIGH });
 const ui = new UI(isTouch);
 const input = new Input(renderer.domElement, isTouch);
 const player = new Player(scene, world);
@@ -45,7 +59,7 @@ const marker = new THREE.Mesh(
 scene.add(marker);
 
 // ---------- Caméra à la 3e personne ----------
-const cam = { yaw: 0, pitch: 0.35, dist: 6 };
+const cam = { yaw: 0, pitch: 0.22, dist: 4.6 };
 const camTarget = new THREE.Vector3().copy(player.position).add(new THREE.Vector3(0, 1.5, 0));
 
 function updateCamera(dt) {
@@ -54,16 +68,19 @@ function updateCamera(dt) {
   cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.0025, -0.25, 1.25);
   cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom * 0.005, 2.5, 12);
 
-  const desired = player.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+  const desired = player.position.clone().add(new THREE.Vector3(0, 1.55, 0));
   camTarget.lerp(desired, 1 - Math.exp(-dt * 12));
   const cp = Math.cos(cam.pitch);
+  // Caméra par-dessus l'épaule (le héros légèrement à gauche de l'écran, comme dans For Honor)
+  const shoulder = 0.55 * Math.min(1, cam.dist / 4.6);
+  const rx = Math.cos(cam.yaw) * shoulder, rz = -Math.sin(cam.yaw) * shoulder;
   camera.position.set(
-    camTarget.x + Math.sin(cam.yaw) * cp * cam.dist,
+    camTarget.x + Math.sin(cam.yaw) * cp * cam.dist + rx,
     camTarget.y + Math.sin(cam.pitch) * cam.dist,
-    camTarget.z + Math.cos(cam.yaw) * cp * cam.dist,
+    camTarget.z + Math.cos(cam.yaw) * cp * cam.dist + rz,
   );
   if (camera.position.y < 0.3) camera.position.y = 0.3;
-  camera.lookAt(camTarget);
+  camera.lookAt(camTarget.x + rx, camTarget.y, camTarget.z + rz);
 }
 
 function targetPosition(t) {
@@ -153,7 +170,9 @@ function frame() {
   for (const n of npcs.list) n.update(dt, player.position);
   updateCamera(dt);
   world.update(dt, player.position, camera.position);
-  renderer.render(scene, camera);
+  grass.update(time);
+  particles.update(dt, player.position);
+  fx.render(time);
 }
 frame();
 

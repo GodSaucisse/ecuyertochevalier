@@ -9,7 +9,11 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
 - Le créateur ne code pas : Claude écrit et envoie le code, le créateur teste et donne ses retours.
 
 ## Technique
-- Three.js r170, copié dans `lib/` (aucune dépendance externe, pas d'étape de compilation).
+- Three.js r170, copié dans `lib/` avec ses modules de post-traitement dans `lib/addons/` (aucune dépendance externe, pas d'étape de compilation).
+- Direction artistique : inspirée de For Honor, fidèle à 1126. Fin d'après-midi d'automne, soleil bas, brume dorée,
+  étalonnage « cinéma » (contraste, ombres froides, lumières chaudes, vignettage, grain), caméra par-dessus l'épaule.
+- Qualité graphique : haute sur ordinateur (occlusion ambiante GTAO, ombres 4096, 120 000 brins d'herbe),
+  allégée sur mobile. Forçable avec `?qualite=haute` ou `?qualite=basse` dans l'adresse.
 - Modules JavaScript dans `src/` :
   - `main.js` : rendu, caméra 3e personne, boucle de jeu, écran titre.
   - `world.js` : terrain, château, village, église, terrain d'entraînement, forêt, collisions.
@@ -20,6 +24,10 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `input.js` : clavier (AZERTY et QWERTY), souris, commandes tactiles.
   - `ui.js` : interface (quête, dialogues, boussole, messages).
   - `audio.js` : sons générés par le navigateur.
+  - `textures.js` : textures générées par le code (pierre, ardoise, chaume, enduit, bois, terre, mailles, gambison, cuir, acier, armoiries).
+  - `sky.js` : ciel et carte d'environnement (reflets des métaux).
+  - `postfx.js` : post-traitement (GTAO, bloom, étalonnage).
+  - `grass.js` : herbe animée par le vent. `particles.js` : poussière et feuilles mortes.
 - Tester en local : `python3 -m http.server` dans le dossier, puis ouvrir http://localhost:8000
 - Débogage : l'objet `window.game` donne accès au joueur, au monde, aux PNJ et aux quêtes.
 
@@ -35,9 +43,18 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
 - Sire Godefroy de Montclair : le seigneur, ancien de la première croisade.
 - Bertrand : maître d'armes.
 - Mathilde : villageoise.
+- Deux gardes à la porte du château (cotte de mailles, casque à nasal, écu, lance).
+
+## Équipements (humanoid.js, option `outfit`)
+- `gambeson` : écuyer (gambison matelassé, épée de bois).
+- `mail` : homme d'armes (haubert de mailles, camail, casque normand à nasal, écu en amande aux armes de Montclair : d'azur au chevron d'or).
+- `lord` : seigneur (tunique longue, manteau rouge à col de fourrure, épée au côté).
+- `dress` : villageoise (robe longue, voile).
 
 ## Avancement
 - [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine.
+- [x] Graphismes « For Honor » : lumière, matériaux, armures
+- [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
 - [ ] Sauvegarde de la progression
 - [ ] Équitation (chevaux)
 - [ ] Combats contre des adversaires

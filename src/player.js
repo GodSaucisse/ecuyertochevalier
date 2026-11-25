@@ -1,6 +1,6 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk } from './humanoid.js';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -14,9 +14,7 @@ function easeOut(t) { return 1 - (1 - t) * (1 - t); }
 export class Player {
   constructor(scene, world) {
     this.world = world;
-    this.h = createHumanoid({
-      tunic: 0x8a5a2b, legs: 0x4f4a3a, boots: 0x3b2a1c, hair: 0x6b4423, belt: 0x3a2616,
-    });
+    this.h = createHumanoid({ outfit: 'gambeson', trousers: 0x4a4436, hair: 0x6b4423 });
     this.object = this.h.root;
     this.object.position.set(0, 0, 40);
     this.object.rotation.y = Math.PI; // regarde vers le château (au nord)
@@ -32,22 +30,8 @@ export class Player {
     this.pendingStrike = false;
 
     // Épée d'entraînement en bois, tenue dans la main droite
-    const wood = new THREE.MeshStandardMaterial({ color: 0xa47548, roughness: 0.9 });
-    const dark = new THREE.MeshStandardMaterial({ color: 0x5a3b22, roughness: 0.9 });
-    const sword = new THREE.Group();
-    sword.rotation.x = 0.5;
-    const parts = [
-      [new THREE.BoxGeometry(0.07, 0.03, 0.75), wood, 0, 0, 0.45],
-      [new THREE.BoxGeometry(0.26, 0.05, 0.06), dark, 0, 0, 0.06],
-      [new THREE.BoxGeometry(0.04, 0.04, 0.18), dark, 0, 0, -0.04],
-      [new THREE.SphereGeometry(0.045, 8, 6), dark, 0, 0, -0.15],
-    ];
-    for (const [geo, m, x, y, z] of parts) {
-      const mesh = new THREE.Mesh(geo, m);
-      mesh.position.set(x, y, z);
-      mesh.castShadow = true;
-      sword.add(mesh);
-    }
+    const sword = createSword(true);
+    sword.rotation.x = 0.45;
     this.h.handR.add(sword);
   }
 
@@ -119,13 +103,22 @@ export class Player {
     if (attacking) {
       this.attackT += dt;
       const t = this.attackT;
-      const rest = 0;
-      let a;
-      if (t < 0.12) a = lerp(rest, -2.8, t / 0.12);
-      else if (t < 0.28) a = lerp(-2.8, -0.2, easeOut((t - 0.12) / 0.16));
-      else a = lerp(-0.2, rest, Math.min(1, (t - 0.28) / 0.14));
+      // Armer (bras levé, buste tourné) puis frapper en diagonale avec tout le corps
+      let a, e, tw;
+      if (t < 0.12) {
+        const k = t / 0.12;
+        a = lerp(0, -2.7, k); e = lerp(-0.3, -1.0, k); tw = lerp(0, 0.55, k);
+      } else if (t < 0.28) {
+        const k = easeOut((t - 0.12) / 0.16);
+        a = lerp(-2.7, -0.35, k); e = lerp(-1.0, -0.1, k); tw = lerp(0.55, -0.6, k);
+      } else {
+        const k = Math.min(1, (t - 0.28) / 0.14);
+        a = lerp(-0.35, 0, k); e = lerp(-0.1, -0.3, k); tw = lerp(-0.6, 0, k);
+      }
       this.h.armR.rotation.x = a;
-      this.h.armR.rotation.z = t < 0.28 ? -0.25 : 0;
+      this.h.elbowR.rotation.x = e;
+      this.h.spine.rotation.y = tw;
+      this.h.armR.rotation.z = t < 0.28 ? 0.25 : 0;
       if (!this.struck && t >= 0.2) { this.struck = true; this.pendingStrike = true; }
       if (t >= ATTACK_DURATION) {
         this.attackT = -1;

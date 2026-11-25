@@ -84,6 +84,11 @@ export class QuestManager {
       } else {
         ui.showDialog([[N, 'Repose-toi. Demain, à cheval !']]);
       }
+    } else if (npc.id === 'garde') {
+      const lines = this.step === 0
+        ? [[N, 'Halte ! … Ah, tu dois être le nouvel écuyer. Passe, Sire Godefroy t\'attend dans la cour.']]
+        : [[N, 'Rien à signaler. Les routes sont calmes depuis la Saint-Michel.']];
+      ui.showDialog(lines);
     } else if (npc.id === 'mathilde') {
       const lines = [
         [[N, 'Bonjour, jeune maître ! C\'est toi, le nouvel écuyer du seigneur ?'],
