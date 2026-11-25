@@ -1,5 +1,5 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
-import { playSuccess } from './audio.js?v=202611251954';
+import { playSuccess } from './audio.js?v=202611252021';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -22,6 +22,8 @@ export class QuestManager {
       case 1: return this.npcs.bertrand;
       case 2: return this.world.quintain;
       case 3: return this.npcs.bertrand;
+      case 4: return this.duelRunning && this.duelRunning() ? null : this.npcs.bertrand;
+      case 5: return this.npcs.godefroy;
       default: return null;
     }
   }
@@ -33,13 +35,50 @@ export class QuestManager {
       case 1: ui.setQuest('Chapitre I · L\'arrivée', 'Rejoins Bertrand, le maître d\'armes, sur le terrain d\'entraînement (à l\'est).'); break;
       case 2: ui.setQuest('Chapitre I · Premières armes', `Frappe la quintaine avec ton épée de bois (${this.hits}/${HITS_NEEDED}).`); break;
       case 3: ui.setQuest('Chapitre I · Premières armes', 'Retourne voir Bertrand.'); break;
-      default: ui.setQuest('Fin du prototype', 'Explore librement Montclair. La suite de ta formation arrive bientôt !');
+      case 4: ui.setQuest('Chapitre I · En garde !', 'Affronte Bertrand en duel d\'entraînement (parle-lui pour commencer).'); break;
+      case 5: ui.setQuest('Chapitre I · En garde !', 'Va raconter ton duel à Sire Godefroy, au château.'); break;
+      default: ui.setQuest('Fin du chapitre I', 'Explore librement Montclair. La suite de ta formation arrive bientôt !');
     }
   }
 
   goTo(step) {
     this.step = step;
     this.refresh();
+    if (this.onChange) this.onChange();
+  }
+
+  serialize() {
+    return { step: this.step, hits: this.hits, mathildeIndex: this.mathildeIndex };
+  }
+
+  restore(data) {
+    this.step = data.step ?? 0;
+    this.hits = data.hits ?? 0;
+    this.mathildeIndex = data.mathildeIndex ?? 0;
+    this.refresh();
+  }
+
+  startDuel() {
+    if (this.onStartDuel) this.onStartDuel();
+  }
+
+  /** Appelé quand le joueur bat Bertrand. */
+  onDuelWon() {
+    const N = this.npcs.bertrand.name;
+    this.ui.showDialog([
+      [N, 'Assez ! Assez ! … Par saint Georges, tu apprends vite.'],
+      [N, 'Tu as bloqué, tu as frappé, tu as tenu ta garde. C\'est ainsi que l\'on reste en vie sur un champ de bataille.'],
+      [N, 'Va donc raconter ça à Sire Godefroy. Il voudra l\'entendre de ta bouche.'],
+    ], () => { playSuccess(); this.goTo(5); });
+  }
+
+  /** Appelé quand le joueur perd le duel libre. */
+  onDuelLost(retry) {
+    const N = this.npcs.bertrand.name;
+    this.ui.showDialog([
+      [N, 'Relève-toi ! Un chevalier peut tomber, mais il se relève toujours.'],
+      [N, 'Surveille ton endurance, et ne frappe pas là où je me protège. Encore une fois !'],
+    ], retry);
   }
 
   talkTo(npc) {
@@ -53,7 +92,17 @@ export class QuestManager {
           [N, 'Si tu te montres digne, tu recevras peut-être un jour l\'adoubement. Mais ce jour est encore loin.'],
           [N, 'Va trouver Bertrand, mon maître d\'armes. Il t\'attend sur le terrain d\'entraînement, à l\'est du chemin.'],
         ], () => { playSuccess(); this.goTo(1); });
-      } else if (this.step >= 4) {
+      } else if (this.step === 5) {
+        ui.showDialog([
+          [N, 'Alors, il paraît que tu as tenu tête à Bertrand ? Il ne dit pas ça de tout le monde.'],
+          [N, 'Bien. Très bien. Mais l\'épée ne fait pas tout. Un chevalier doit aussi savoir monter, chasser, servir… et obéir.'],
+          [N, 'Repose-toi ce soir, écuyer. Demain, tu apprendras à monter à cheval.'],
+        ], () => {
+          playSuccess();
+          this.goTo(6);
+          this.ui.toast('Fin du chapitre I. La suite arrive bientôt !', 5000);
+        });
+      } else if (this.step >= 6) {
         ui.showDialog([[N, 'Bertrand m\'a dit du bien de toi. Continue ainsi, écuyer.']]);
       } else {
         ui.showDialog([[N, 'Bertrand t\'attend. Ne fais pas attendre un homme qui manie l\'épée mieux que toi.']]);
@@ -75,14 +124,17 @@ export class QuestManager {
       } else if (this.step === 3) {
         ui.showDialog([
           [N, 'Pas mal, pour un premier jour. Tu as la main lourde, c\'est bon signe.'],
-          [N, 'Demain, nous verrons si tu tiens aussi bien en selle. Va te reposer, écuyer.'],
+          [N, 'Mais frapper un poteau, c\'est facile : il ne rend pas les coups. Moi, si.'],
+          [N, 'Prends ta garde, écuyer. Je vais t\'apprendre à bloquer, à toucher et à parer. En garde !'],
         ], () => {
           playSuccess();
           this.goTo(4);
-          this.ui.toast('Fin du prototype : la suite arrive bientôt !', 5000);
+          this.startDuel();
         });
+      } else if (this.step === 4) {
+        ui.showDialog([[N, 'Reprenons là où nous en étions. En garde !']], () => this.startDuel());
       } else {
-        ui.showDialog([[N, 'Repose-toi. Demain, à cheval !']]);
+        ui.showDialog([[N, 'Va voir Sire Godefroy. Et demain, à cheval !']]);
       }
     } else if (npc.id === 'garde') {
       const lines = this.step === 0

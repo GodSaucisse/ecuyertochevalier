@@ -34,14 +34,16 @@ html, body {
 .epee { font-size: 2.6rem; }
 h1 { margin: 0.3rem 0 1rem; font-size: 2rem; color: #e8c66a; letter-spacing: 0.03em; }
 .recit { line-height: 1.55; margin: 0 0 1.4rem; }
-#start {
+.boutons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+#start, #continue {
   font-family: inherit; font-size: 1.2rem;
   padding: 0.7rem 2.2rem;
   background: #7a2e1f; color: #f8ead0;
   border: 2px solid #e8c66a; border-radius: 4px;
   cursor: pointer;
 }
-#start:hover { background: #943a28; }
+#start:hover, #continue:hover { background: #943a28; }
+#continue + #start { background: transparent; }
 .controles { margin-top: 1.4rem; font-size: 0.85rem; line-height: 1.6; opacity: 0.8; }
 
 /* ---------- HUD ---------- */
@@ -121,3 +123,72 @@ h1 { margin: 0.3rem 0 1rem; font-size: 2rem; color: #e8c66a; letter-spacing: 0.0
 }
 .tbtn.big { width: 78px; height: 78px; font-size: 2rem; }
 .tbtn:active { background: rgba(122,46,31,0.9); }
+
+/* ---------- Combat ---------- */
+.duel-only { display: none; }
+body.in-duel .duel-only { display: inline-block; }
+body.in-duel #btn-talk, body.in-duel #btn-jump { display: none; }
+body.in-duel #compass, body.in-duel #prompt, body.in-duel #quest { display: none !important; }
+
+#enemy-bar {
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  width: min(420px, 70vw); text-align: center;
+}
+#enemy-name { font-size: 1rem; color: #f3e6c8; text-shadow: 0 1px 3px #000; margin-bottom: 4px; letter-spacing: 0.05em; }
+.bar { height: 10px; background: rgba(0,0,0,0.55); border: 1px solid rgba(232,198,106,0.6); border-radius: 2px; overflow: hidden; }
+.bar .fill { height: 100%; width: 100%; transition: width 0.15s; }
+#enemy-hp { background: linear-gradient(#c23b2a, #7e1f15); }
+#player-bars { position: absolute; left: 18px; bottom: 22px; width: min(300px, 40vw); display: flex; flex-direction: column; gap: 6px; }
+#player-hp { background: linear-gradient(#d8c690, #a08a50); }
+#player-st { background: linear-gradient(#6fa0c8, #3a6a90); }
+.bar.st { height: 6px; }
+#player-st.exhausted { background: #7a2e1f; animation: blink 0.4s infinite alternate; }
+
+#tuto {
+  position: absolute; top: 78px; left: 50%; transform: translateX(-50%);
+  width: min(560px, 92vw); text-align: center;
+  background: rgba(30,22,16,0.8); border: 1px solid #c9a24a; padding: 0.55rem 0.9rem; border-radius: 4px;
+}
+#tuto-title { color: #e8c66a; font-weight: bold; margin-bottom: 0.2rem; }
+#tuto-text { font-size: 0.92rem; line-height: 1.4; }
+#tuto-count { margin-top: 0.3rem; font-size: 1rem; color: #e8c66a; letter-spacing: 0.2em; }
+#tuto:empty { display: none; }
+
+.guard-ind { position: absolute; width: 0; height: 0; transition: opacity 0.2s; }
+.guard-ind .w {
+  position: absolute; width: 30px; height: 30px; margin: -15px 0 0 -15px;
+  border-top: 5px solid rgba(255,255,255,0.28); border-left: 5px solid rgba(255,255,255,0.28);
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.8));
+}
+.guard-ind .w.L { transform: translate(-58px, 0) rotate(-45deg); }
+.guard-ind .w.R { transform: translate(58px, 0) rotate(135deg); }
+.guard-ind .w.T { transform: translate(0, -58px) rotate(45deg); }
+.guard-ind .w.on { border-color: #ffffff; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
+.guard-ind .w.atk { border-color: #ff3b2a; filter: drop-shadow(0 0 10px #ff2a10); animation: blink 0.12s infinite alternate; }
+.guard-ind .w.atk.heavy { border-width: 9px; border-color: #ff7a1a; }
+.guard-ind.mine .w { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-width: 3px; }
+.guard-ind.mine .w.L { transform: translate(-34px, 0) rotate(-45deg); }
+.guard-ind.mine .w.R { transform: translate(34px, 0) rotate(135deg); }
+.guard-ind.mine .w.T { transform: translate(0, -34px) rotate(45deg); }
+.guard-ind.mine .w.on { border-color: #e8c66a; filter: drop-shadow(0 0 5px rgba(232,198,106,0.9)); }
+
+#combat-msg {
+  position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+  font-size: 2rem; font-weight: bold; letter-spacing: 0.1em; color: #fff;
+  text-shadow: 0 0 12px rgba(0,0,0,0.9), 0 0 4px #000; opacity: 0; transition: opacity 0.25s;
+}
+#combat-msg.show { opacity: 1; }
+#hurt {
+  position: fixed; inset: 0; pointer-events: none; z-index: 8; opacity: 0;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(150,10,0,0.65));
+  transition: opacity 0.35s;
+}
+#saved {
+  position: absolute; right: 16px; bottom: 16px; font-size: 0.85rem;
+  background: rgba(30,22,16,0.75); padding: 4px 10px; border-radius: 3px;
+}
+@keyframes blink { from { opacity: 1; } to { opacity: 0.45; } }
+@media (max-width: 700px) {
+  #player-bars { bottom: auto; top: 62px; width: 45vw; }
+  #tuto { top: auto; bottom: 120px; }
+}

@@ -11,7 +11,7 @@ export class Input {
     this.joy = { x: 0, y: 0 };
     this.look = { dx: 0, dy: 0 };
     this.zoom = 0;
-    this.actions = { interact: false, attack: false, jump: false };
+    this.actions = { interact: false, attack: false, jump: false, heavy: false, guard: null };
     this.locked = false;
 
     window.addEventListener('keydown', (e) => {
@@ -22,6 +22,10 @@ export class Input {
       if (e.code === 'Space') this.actions.jump = true;
       if (e.code === 'KeyE' || e.code === 'Enter') this.actions.interact = true;
       if (e.code === 'KeyF') this.actions.attack = true;
+      if (e.code === 'KeyR') this.actions.heavy = true;
+      if (e.code === 'Digit1' || e.code === 'Numpad4') this.actions.guard = 'L';
+      if (e.code === 'Digit2' || e.code === 'Numpad8') this.actions.guard = 'T';
+      if (e.code === 'Digit3' || e.code === 'Numpad6') this.actions.guard = 'R';
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.keys.clear());
@@ -32,6 +36,7 @@ export class Input {
       if (!this.enabled || this.isTouch) return;
       if (this.locked) {
         if (e.button === 0) this.actions.attack = true;
+        if (e.button === 2) this.actions.heavy = true;
       } else {
         dragging = true;
         try {
@@ -41,6 +46,7 @@ export class Input {
       }
     });
     window.addEventListener('mouseup', () => { dragging = false; });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('mousemove', (e) => {
       if (!this.enabled) return;
       if (this.locked || dragging) {
@@ -118,6 +124,8 @@ export class Input {
     bind('btn-attack', 'attack');
     bind('btn-jump', 'jump');
     bind('btn-talk', 'interact');
+    bind('btn-heavy', 'heavy');
+    bind('btn-dodge', 'jump');
   }
 
   /** Direction de déplacement : x = droite/gauche, y = avant/arrière. */
@@ -142,7 +150,8 @@ export class Input {
 
   consumeActions() {
     const a = { ...this.actions };
-    this.actions.interact = this.actions.attack = this.actions.jump = false;
+    this.actions.interact = this.actions.attack = this.actions.jump = this.actions.heavy = false;
+    this.actions.guard = null;
     return a;
   }
 

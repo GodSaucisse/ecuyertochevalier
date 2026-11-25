@@ -28,6 +28,16 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `sky.js` : ciel et carte d'environnement (reflets des métaux).
   - `postfx.js` : post-traitement (GTAO, bloom, étalonnage).
   - `grass.js` : herbe animée par le vent. `particles.js` : poussière et feuilles mortes.
+  - `combat.js` : règles du combat (garde en 3 directions, coups légers/lourds, blocage, parade, esquive, endurance) et poses.
+  - `duel.js` : duel contre Bertrand (leçons + duel libre), IA, indicateurs de garde, étincelles, ralenti.
+  - `save.js` : sauvegarde automatique dans le navigateur (localStorage).
+
+## Combat (inspiré de For Honor)
+- Garde vue depuis le combattant : 'L' (sa gauche), 'T' (haut), 'R' (sa droite). Une attaque lancée depuis d arrive sur le côté mirror(d) du défenseur.
+- Bloquer : garde du côté de l'indicateur rouge. Parer : coup lourd du même côté dans les 0,32 s avant l'impact (0,5 s pendant la leçon).
+- Commandes ordinateur : souris = garde (ou touches 1/2/3), clic gauche/F = léger, clic droit/R = lourd, Espace = esquive.
+- Commandes mobile : glisser à droite = garde, ⚔️ léger, 💥 lourd, ↶ esquive.
+- Leçons : bloquer ×3, toucher ×3, parer ×1 (passée après 6 essais), puis duel libre. Défaite = on recommence le duel libre.
 - Tester en local : `python3 -m http.server` dans le dossier, puis ouvrir http://localhost:8000
 - **Avant chaque envoi sur GitHub : lancer `python3 tools/version.py`** (change le numéro de version des fichiers pour que les navigateurs chargent la nouvelle version au lieu de celle en cache).
 - Débogage : l'objet `window.game` donne accès au joueur, au monde, aux PNJ et aux quêtes.
@@ -52,13 +62,17 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
 - `lord` : seigneur (tunique longue, manteau rouge à col de fourrure, épée au côté).
 - `dress` : villageoise (robe longue, voile).
 
+## Quête (quests.js, étapes)
+0 seigneur → 1 Bertrand → 2 quintaine ×5 → 3 retour à Bertrand → 4 duel → 5 raconter au seigneur → 6 fin du chapitre I
+
 ## Avancement
-- [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine.
+- [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine, duel d'entraînement.
+- [x] Combat à la For Honor
+- [x] Sauvegarde automatique
 - [x] Graphismes « For Honor » : lumière, matériaux, armures
 - [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
-- [ ] Sauvegarde de la progression
 - [ ] Équitation (chevaux)
-- [ ] Combats contre des adversaires
+- [ ] Combats contre de vrais adversaires (brigands…), plusieurs ennemis
 - [ ] Caméra qui évite de traverser les murs
 - [ ] Intérieurs des bâtiments
 - [ ] Musique d'ambiance

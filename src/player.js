@@ -1,6 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611251954';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611252021';
+import { Fighter } from './combat.js?v=202611252021';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -33,6 +34,8 @@ export class Player {
     const sword = createSword(true);
     sword.rotation.x = 0.45;
     this.h.handR.add(sword);
+    this.sword = sword;
+    this.fighter = new Fighter(this.h, sword, { maxHp: 100 });
   }
 
   get position() { return this.object.position; }
@@ -59,7 +62,46 @@ export class Player {
     return s;
   }
 
-  update(dt, move, run, yaw) {
+  /** Déplacement en duel : verrouillé face à l'adversaire, pas de course. */
+  updateLocked(dt, move, target) {
+    const pos = this.object.position;
+    const f = this.fighter;
+    let fx = target.x - pos.x, fz = target.z - pos.z;
+    const d = Math.hypot(fx, fz) || 1;
+    fx /= d; fz /= d;
+    let vx = 0, vz = 0;
+    if (f.state === 'dodge') {
+      vx = f.dodgeVel.x; vz = f.dodgeVel.z;
+    } else if (f.alive && !['hitstun', 'staggered', 'defeated'].includes(f.state)) {
+      const slow = f.attacking ? 0.25 : 1;
+      vx = (fx * move.y - fz * move.x) * 2.6 * slow;
+      vz = (fz * move.y + fx * move.x) * 2.6 * slow;
+    }
+    pos.x += vx * dt;
+    pos.z += vz * dt;
+    const targetRot = Math.atan2(fx, fz);
+    const diff = Math.atan2(Math.sin(targetRot - this.object.rotation.y), Math.cos(targetRot - this.object.rotation.y));
+    this.object.rotation.y += diff * Math.min(1, dt * 14);
+    this.vy -= GRAVITY * dt;
+    pos.y += this.vy * dt;
+    if (pos.y <= 0) { pos.y = 0; this.vy = 0; this.grounded = true; }
+    this.world.resolve(pos, this.radius);
+
+    const speed = Math.hypot(vx, vz);
+    this.phase += dt * 7 * Math.min(1.5, speed / 2.6);
+    this.walkAmount += (Math.min(1, speed / 2.6) * 0.6 - this.walkAmount) * Math.min(1, dt * 10);
+    animateWalk(this.h, this.phase, this.walkAmount, true);
+    f.update(dt);
+    f.applyPose(dt);
+    // Posture de combat : genoux un peu fléchis
+    this.h.kneeL.rotation.x += 0.15;
+    this.h.kneeR.rotation.x += 0.15;
+    this.h.legL.rotation.x -= 0.08;
+    this.h.legR.rotation.x -= 0.08;
+  }
+
+  update(dt, move, run, yaw, lockTarget = null) {
+    if (lockTarget) { this.updateLocked(dt, move, lockTarget); return; }
     const pos = this.object.position;
     const attacking = this.attackT >= 0;
 

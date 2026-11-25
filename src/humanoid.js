@@ -2,7 +2,7 @@
 // et équipements d'époque (1126) : cotte de mailles, casque à nasal,
 // écu en amande, gambison, manteau, robe…
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611251954';
+import { Tex } from './textures.js?v=202611252021';
 
 // ---------- Matériaux (partagés entre personnages) ----------
 const matCache = {};

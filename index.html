@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>D'Écuyer à Chevalier</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=202611251954">
+  <link rel="stylesheet" href="style.css?v=202611252021">
   <script type="importmap">
     { "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }
   </script>
@@ -25,6 +25,26 @@
     </div>
     <div id="prompt" class="hidden"></div>
     <div id="toast" class="hidden"></div>
+    <div id="combat" class="hidden">
+      <div id="enemy-bar">
+        <div id="enemy-name"></div>
+        <div class="bar"><div id="enemy-hp" class="fill"></div></div>
+      </div>
+      <div id="player-bars">
+        <div class="bar hp"><div id="player-hp" class="fill"></div></div>
+        <div class="bar st"><div id="player-st" class="fill"></div></div>
+      </div>
+      <div id="tuto">
+        <div id="tuto-title"></div>
+        <div id="tuto-text"></div>
+        <div id="tuto-count"></div>
+      </div>
+      <div class="guard-ind" id="gi-enemy"><span class="w L"></span><span class="w T"></span><span class="w R"></span></div>
+      <div class="guard-ind mine" id="gi-player"><span class="w L"></span><span class="w T"></span><span class="w R"></span></div>
+      <div id="combat-msg"></div>
+    </div>
+    <div id="hurt"></div>
+    <div id="saved" class="hidden">💾 Partie sauvegardée</div>
     <div id="dialog" class="hidden">
       <div id="dialog-name"></div>
       <div id="dialog-text"></div>
@@ -40,6 +60,8 @@
     <div id="touch-buttons">
       <button id="btn-talk" class="tbtn">💬</button>
       <button id="btn-jump" class="tbtn">⤒</button>
+      <button id="btn-dodge" class="tbtn duel-only">↶</button>
+      <button id="btn-heavy" class="tbtn big duel-only">💥</button>
       <button id="btn-attack" class="tbtn big">⚔️</button>
     </div>
   </div>
@@ -54,20 +76,26 @@
         Fils cadet d'une famille modeste, tu arrives au château de Montclair
         pour servir comme écuyer. Le chemin vers la chevalerie sera long…
       </p>
-      <button id="start">Commencer</button>
+      <div class="boutons">
+        <button id="continue" class="hidden">Continuer</button>
+        <button id="start">Commencer</button>
+      </div>
       <div class="controles" id="controls-desktop">
         <b>Z Q S D</b> ou flèches : se déplacer · <b>Maj</b> : courir · <b>Espace</b> : sauter<br>
         <b>Souris</b> : regarder (clic pour capturer, Échap pour libérer) · <b>Molette</b> : zoom<br>
-        <b>E</b> : parler · <b>Clic gauche</b> ou <b>F</b> : frapper
+        <b>E</b> : parler · <b>Clic gauche</b> ou <b>F</b> : frapper<br>
+        <b>En duel</b> : souris = garde (gauche / haut / droite) · <b>clic gauche</b> coup léger ·
+        <b>clic droit</b> ou <b>R</b> coup lourd · <b>Espace</b> esquive
       </div>
       <div class="controles hidden" id="controls-touch">
         Joystick à gauche : se déplacer (poussez à fond pour courir)<br>
         Glisser à droite : tourner la caméra<br>
-        ⚔️ frapper · 💬 parler · ⤒ sauter
+        ⚔️ frapper · 💬 parler · ⤒ sauter<br>
+        En duel : glisser à droite = garde · ⚔️ coup léger · 💥 coup lourd · ↶ esquive
       </div>
     </div>
   </div>
 
-  <script type="module" src="src/main.js?v=202611251954"></script>
+  <script type="module" src="src/main.js?v=202611252021"></script>
 </body>
 </html>
