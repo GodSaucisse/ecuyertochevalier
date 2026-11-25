@@ -1,7 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611252021';
-import { Fighter } from './combat.js?v=202611252021';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611252110';
+import { Fighter } from './combat.js?v=202611252110';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -60,6 +60,30 @@ export class Player {
     const s = this.pendingStrike;
     this.pendingStrike = false;
     return s;
+  }
+
+  /** À cheval : le cavalier suit la selle. */
+  updateMounted(dt, horse, lance) {
+    const seat = horse.parts.seat.getWorldPosition(this._seat || (this._seat = new THREE.Vector3()));
+    this.object.position.set(seat.x, seat.y - 0.9, seat.z);
+    this.object.rotation.y = horse.heading;
+    this.vy = 0;
+    this.attackT = -1;
+    this.sword.visible = false;
+    horse.poseRider(this.h, lance);
+  }
+
+  /** Descend du cheval, à sa gauche. */
+  dismount(horse) {
+    const h = horse.heading;
+    const p = horse.position;
+    this.object.position.set(p.x + Math.cos(h) * 1.4, 0, p.z - Math.sin(h) * 1.4);
+    this.world.resolve(this.object.position, this.radius);
+    this.object.rotation.y = h;
+    this.sword.visible = true;
+    const b = this.h;
+    for (const part of [b.legL, b.legR, b.armL, b.armR, b.spine]) part.rotation.set(0, 0, 0);
+    b.kneeL.rotation.x = b.kneeR.rotation.x = 0;
   }
 
   /** Déplacement en duel : verrouillé face à l'adversaire, pas de course. */

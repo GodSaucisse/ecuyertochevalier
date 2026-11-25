@@ -1,14 +1,15 @@
 // Personnages non-joueurs (PNJ).
 import * as THREE from 'three';
-import { createHumanoid } from './humanoid.js?v=202611252021';
+import { createHumanoid } from './humanoid.js?v=202611252110';
 
 function makeNPC(scene, world, { id, name, x, z, rotY, look, pose, talks = true }) {
   const h = createHumanoid(look);
   h.root.position.set(x, 0, z);
   h.root.rotation.y = rotY;
   scene.add(h.root);
-  world.circles.push({ x, z, r: 0.45, top: 99 });
-  const baseRot = rotY;
+  const circle = { x, z, r: 0.45, top: 99 };
+  world.circles.push(circle);
+  let baseRot = rotY;
   let t = Math.random() * 10;
   if (pose) pose(h);
   const base = {
@@ -18,8 +19,17 @@ function makeNPC(scene, world, { id, name, x, z, rotY, look, pose, talks = true 
     id, name, h, talks,
     object: h.root,
     markerHeight: 2.35,
+    circle,
+    /** Déplace le personnage (et son obstacle) ailleurs dans le monde. */
+    moveTo(nx, nz, rot) {
+      h.root.position.set(nx, 0, nz);
+      h.root.rotation.y = rot;
+      baseRot = rot;
+      circle.x = nx; circle.z = nz;
+    },
     update(dt, playerPos) {
       t += dt;
+      const { x, z } = h.root.position;
       // Respiration
       const b = Math.sin(t * 1.6);
       h.spine.position.y = 0.98 + b * 0.006;

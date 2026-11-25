@@ -1,8 +1,8 @@
 // Duel d'entraînement contre Bertrand : leçons (bloquer, toucher, parer) puis duel libre.
 import * as THREE from 'three';
-import { Fighter, mirror, DIRS } from './combat.js?v=202611252021';
-import { createSword, animateWalk } from './humanoid.js?v=202611252021';
-import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611252021';
+import { Fighter, mirror, DIRS } from './combat.js?v=202611252110';
+import { createSword, animateWalk } from './humanoid.js?v=202611252110';
+import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611252110';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -57,7 +57,7 @@ export class Duel {
 
     const npc = this.npc;
     npc.inCombat = true;
-    this.npcCircle = this.world.circles.find((c) => Math.abs(c.x - npc.object.position.x) < 0.01 && Math.abs(c.z - npc.object.position.z) < 0.01);
+    this.npcCircle = npc.circle;
     this.home = { pos: npc.object.position.clone(), rot: npc.object.rotation.y };
     if (this.npcCircle) this.npcCircle.top = -1; // désactive l'obstacle fixe pendant le duel
 

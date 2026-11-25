@@ -124,3 +124,15 @@ export function playVictory() {
   if (!ctx) return;
   [392, 523.25, 659.25, 783.99].forEach((f, i) => setTimeout(() => tone(f, 0.6, 0.15, 'triangle'), i * 140));
 }
+
+/** Bruit de sabot (plus fort au galop). */
+export function playHoof(intensity = 0.5) {
+  if (!ctx) return;
+  burst(0.07, 'lowpass', 380 + intensity * 300, 1, 0.25 + intensity * 0.45, 3);
+}
+
+/** Lance qui frappe l'écu de la quintaine. */
+export function playLanceHit() {
+  burst(0.25, 'bandpass', 900, 2, 1.6, 2);
+  tone(180, 0.3, 0.3, 'triangle', 0.5);
+}

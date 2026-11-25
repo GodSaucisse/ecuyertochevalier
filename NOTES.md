@@ -31,6 +31,9 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `combat.js` : règles du combat (garde en 3 directions, coups légers/lourds, blocage, parade, esquive, endurance) et poses.
   - `duel.js` : duel contre Bertrand (leçons + duel libre), IA, indicateurs de garde, étincelles, ralenti.
   - `save.js` : sauvegarde automatique dans le navigateur (localStorage).
+  - `horse.js` : Tonnerre, le cheval (modèle articulé, pas/trot/galop, conduite, cavalier en selle, pointe de lance).
+  - `course.js` : parcours de 8 portes à bannières, lice de joute, quintaine de joute, tribune, spectateurs, lance.
+  - `layout.js` : emplacements du chapitre II (portes, lice, écurie) ; le décor évite d'y planter des arbres.
 
 ## Combat (inspiré de For Honor)
 - Garde vue depuis le combattant : 'L' (sa gauche), 'T' (haut), 'R' (sa droite). Une attaque lancée depuis d arrive sur le côté mirror(d) du défenseur.
@@ -63,17 +66,26 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
 - `dress` : villageoise (robe longue, voile).
 
 ## Quête (quests.js, étapes)
-0 seigneur → 1 Bertrand → 2 quintaine ×5 → 3 retour à Bertrand → 4 duel → 5 raconter au seigneur → 6 fin du chapitre I
+Chapitre I : 0 seigneur → 1 Bertrand → 2 quintaine ×5 → 3 retour à Bertrand → 4 duel → 5 raconter au seigneur
+Chapitre II « En selle » : 6 Bertrand aux écuries → 7 monter sur Tonnerre → 8 franchir les 8 portes → 9 joute ×3 au galop
+→ 10 Bertrand à l'entrée de la lice → 11 rapport au seigneur → 12 fin du chapitre II
+Bertrand change de place selon l'étape (QuestManager.placeNPCs).
+
+## Cheval
+- Ordinateur : Z/↑ avancer (trot), Maj galop, Q/D tourner, S freiner/reculer, E monter/descendre (à l'arrêt).
+- Mobile : joystick (poussé à fond = galop), 💬 monter/descendre.
+- Joute : la pointe de lance doit passer à moins de 1,2 m de l'écu, au galop (vitesse > 8).
 
 ## Avancement
 - [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine, duel d'entraînement.
 - [x] Combat à la For Honor
 - [x] Sauvegarde automatique
+- [x] Chapitre II : équitation, parcours, joute
 - [x] Graphismes « For Honor » : lumière, matériaux, armures
 - [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
-- [ ] Équitation (chevaux)
 - [ ] Combats contre de vrais adversaires (brigands…), plusieurs ennemis
 - [ ] Caméra qui évite de traverser les murs
 - [ ] Intérieurs des bâtiments
 - [ ] Musique d'ambiance
+- [ ] Chapitre III (sortie hors des terres avec le seigneur ?)
 - [ ] Adoubement (fin du jeu)

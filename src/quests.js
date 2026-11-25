@@ -1,5 +1,6 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
-import { playSuccess } from './audio.js?v=202611252021';
+import * as THREE from 'three';
+import { playSuccess } from './audio.js?v=202611252110';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -12,6 +13,8 @@ export class QuestManager {
     this.step = 0;
     this.hits = 0;
     this.mathildeIndex = 0;
+    this.gateIndex = 0;
+    this.joustHits = 0;
     this.refresh();
   }
 
@@ -24,6 +27,15 @@ export class QuestManager {
       case 3: return this.npcs.bertrand;
       case 4: return this.duelRunning && this.duelRunning() ? null : this.npcs.bertrand;
       case 5: return this.npcs.godefroy;
+      case 6: return this.npcs.bertrand;
+      case 7: return this.horse && !this.horse.mounted ? this.horse : null;
+      case 8: {
+        const g = this.course && this.course.gates[this.gateIndex];
+        return g ? { position: new THREE.Vector3(g.x, 0, g.z), markerHeight: 4.5 } : null;
+      }
+      case 9: return this.course ? this.course.joust : null;
+      case 10: return this.npcs.bertrand;
+      case 11: return this.npcs.godefroy;
       default: return null;
     }
   }
@@ -37,24 +49,89 @@ export class QuestManager {
       case 3: ui.setQuest('Chapitre I · Premières armes', 'Retourne voir Bertrand.'); break;
       case 4: ui.setQuest('Chapitre I · En garde !', 'Affronte Bertrand en duel d\'entraînement (parle-lui pour commencer).'); break;
       case 5: ui.setQuest('Chapitre I · En garde !', 'Va raconter ton duel à Sire Godefroy, au château.'); break;
-      default: ui.setQuest('Fin du chapitre I', 'Explore librement Montclair. La suite de ta formation arrive bientôt !');
+      case 6: ui.setQuest('Chapitre II · En selle', 'Rejoins Bertrand aux écuries, dans la cour du château.'); break;
+      case 7: ui.setQuest('Chapitre II · En selle', 'Monte sur Tonnerre : approche-toi du cheval et appuie sur ' + (ui.isTouch ? '💬.' : 'E.')); break;
+      case 8: ui.setQuest('Chapitre II · En selle', `Franchis les portes à bannières, dans l'ordre (${this.gateIndex}/8). Suis l'anneau doré.`); break;
+      case 9: ui.setQuest('Chapitre II · La lice', `Charge la quintaine au galop et frappe l'écu avec ta lance (${this.joustHits}/3).`); break;
+      case 10: ui.setQuest('Chapitre II · La lice', 'Va voir Bertrand à l\'entrée de la lice.'); break;
+      case 11: ui.setQuest('Chapitre II · La lice', 'Rentre au château et fais ton rapport à Sire Godefroy.'); break;
+      default: ui.setQuest('Fin du chapitre II', 'Explore librement Montclair. Le chapitre III arrive bientôt !');
     }
   }
 
   goTo(step) {
     this.step = step;
+    this.placeNPCs();
     this.refresh();
+    if (this.course) this.course.setActiveGate(step === 8 ? this.gateIndex : -1);
     if (this.onChange) this.onChange();
   }
 
+  /** Bertrand change de place selon l'avancée de l'histoire. */
+  placeNPCs() {
+    const b = this.npcs.bertrand;
+    if (this.duelRunning && this.duelRunning()) return;
+    if (this.step >= 6 && this.step <= 7) b.moveTo(-11.5, -29.5, Math.PI);
+    else if (this.step >= 8 && this.step <= 10) b.moveTo(52, 45, Math.PI);
+    else b.moveTo(23, -3, -Math.PI / 2);
+  }
+
+  onMounted() {
+    if (this.step === 7) {
+      this.ui.toast(this.ui.isTouch
+        ? 'Joystick : avancer et tourner · poussé à fond : galop · 💬 : descendre'
+        : 'Z/↑ : avancer · Maj : galop · Q/D : tourner · S : freiner · E : descendre', 7000);
+      this.gateIndex = 0;
+      this.goTo(8);
+    }
+  }
+
+  onGatePassed() {
+    this.gateIndex++;
+    playSuccess();
+    if (this.gateIndex >= this.course.gates.length) {
+      const N = this.npcs.bertrand.name;
+      this.goTo(9);
+      this.ui.showDialog([
+        [N, 'Bien mené ! Tu tiens en selle mieux que je ne l\'aurais cru.'],
+        [N, 'Voici la lice. Prends cette lance, couche-la sous ton bras et charge la quintaine au GALOP.'],
+        [N, 'Vise l\'écu. Trois touches propres, et je te laisse tranquille… pour aujourd\'hui.'],
+      ]);
+    } else {
+      this.ui.toast(`Porte ${this.gateIndex}/8`, 1200);
+      this.course.setActiveGate(this.gateIndex);
+      this.refresh();
+      if (this.onChange) this.onChange();
+    }
+  }
+
+  onJoustHit(fastEnough) {
+    if (this.step !== 9) return;
+    if (!fastEnough) { this.ui.toast('Trop lent ! Il faut charger au galop.', 2000); return; }
+    this.joustHits++;
+    this.course.cheer();
+    if (this.joustHits >= 3) {
+      playSuccess();
+      this.ui.toast('Magnifique ! La foule t\'acclame.', 3000);
+      this.goTo(10);
+    } else {
+      this.ui.toast(`Touché ! (${this.joustHits}/3)`, 1500);
+      this.refresh();
+    }
+  }
+
   serialize() {
-    return { step: this.step, hits: this.hits, mathildeIndex: this.mathildeIndex };
+    return { step: this.step, hits: this.hits, mathildeIndex: this.mathildeIndex, gateIndex: this.gateIndex, joustHits: this.joustHits };
   }
 
   restore(data) {
     this.step = data.step ?? 0;
     this.hits = data.hits ?? 0;
     this.mathildeIndex = data.mathildeIndex ?? 0;
+    this.gateIndex = data.gateIndex ?? 0;
+    this.joustHits = data.joustHits ?? 0;
+    this.placeNPCs();
+    if (this.course) this.course.setActiveGate(this.step === 8 ? this.gateIndex : -1);
     this.refresh();
   }
 
@@ -100,10 +177,22 @@ export class QuestManager {
         ], () => {
           playSuccess();
           this.goTo(6);
-          this.ui.toast('Fin du chapitre I. La suite arrive bientôt !', 5000);
+          if (this.onChapter) this.onChapter('Chapitre II', 'En selle');
         });
-      } else if (this.step >= 6) {
-        ui.showDialog([[N, 'Bertrand m\'a dit du bien de toi. Continue ainsi, écuyer.']]);
+      } else if (this.step >= 6 && this.step <= 10) {
+        ui.showDialog([[N, 'Bertrand t\'attend. Et Tonnerre aussi : c\'est un bon cheval, prends-en soin.']]);
+      } else if (this.step === 11) {
+        ui.showDialog([
+          [N, 'On m\'a raconté ta joute. Trois touches au galop, à ton âge ! Les villageois ne parlent que de ça.'],
+          [N, 'L\'épée, le cheval, la lance… tu deviens un véritable homme d\'armes.'],
+          [N, 'Mais la chevalerie ne s\'apprend pas seulement à l\'entraînement. Bientôt, tu m\'accompagneras hors de nos terres. Tiens-toi prêt.'],
+        ], () => {
+          playSuccess();
+          this.goTo(12);
+          this.ui.toast('Fin du chapitre II. La suite arrive bientôt !', 5000);
+        });
+      } else if (this.step >= 12) {
+        ui.showDialog([[N, 'Repose-toi, écuyer. Les jours à venir seront moins paisibles.']]);
       } else {
         ui.showDialog([[N, 'Bertrand t\'attend. Ne fais pas attendre un homme qui manie l\'épée mieux que toi.']]);
       }
@@ -133,8 +222,27 @@ export class QuestManager {
         });
       } else if (this.step === 4) {
         ui.showDialog([[N, 'Reprenons là où nous en étions. En garde !']], () => this.startDuel());
-      } else {
+      } else if (this.step === 5) {
         ui.showDialog([[N, 'Va voir Sire Godefroy. Et demain, à cheval !']]);
+      } else if (this.step === 6) {
+        ui.showDialog([
+          [N, 'Ah, te voilà. Je te présente Tonnerre. Il est vif, mais il a bon cœur.'],
+          [N, 'Un chevalier sans cheval n\'est qu\'un homme avec une épée. Monte en selle.'],
+          [N, 'Je t\'ai préparé un parcours dans la campagne : des portes à bannières. Passe-les toutes, dans l\'ordre, puis rejoins-moi à la lice.'],
+        ], () => this.goTo(7));
+      } else if (this.step === 7) {
+        ui.showDialog([[N, 'Qu\'attends-tu ? Tonnerre ne va pas se seller tout seul… enfin, si, c\'est déjà fait. En selle !']]);
+      } else if (this.step === 8) {
+        ui.showDialog([[N, 'Les portes d\'abord ! Suis l\'anneau doré.']]);
+      } else if (this.step === 9) {
+        ui.showDialog([[N, `Au galop, j'ai dit ! Vise l'écu. ${this.joustHits}/3.`]]);
+      } else if (this.step === 10) {
+        ui.showDialog([
+          [N, 'Hé ! Tu m\'as presque fait sourire, et ce n\'est pas facile.'],
+          [N, 'Va trouver Sire Godefroy et raconte-lui. Il sera fier de toi… même s\'il ne le dira pas.'],
+        ], () => { playSuccess(); this.goTo(11); });
+      } else {
+        ui.showDialog([[N, 'Repose-toi. Tes bras en auront besoin.']]);
       }
     } else if (npc.id === 'garde') {
       const lines = this.step === 0

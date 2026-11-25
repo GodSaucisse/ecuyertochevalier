@@ -1,7 +1,8 @@
 // Le monde : terrain, château de Montclair, village, église, terrain d'entraînement, forêt.
 import * as THREE from 'three';
-import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611252021';
-import { createSky, SKY } from './sky.js?v=202611252021';
+import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611252110';
+import { createSky, SKY } from './sky.js?v=202611252110';
+import { onCourse } from './layout.js?v=202611252110';
 
 // Générateur aléatoire "à graine" : le monde est identique à chaque partie.
 function mulberry32(seed) {
@@ -514,6 +515,7 @@ export function buildWorld(scene) {
     if (Math.abs(x) < 4 && z > -20 && z < 58) return true;        // chemin
     if (x > 0 && x < 20 && Math.abs(z) < 3.5) return true;        // embranchement
     if (x > 28 && x < 48 && z > 25 && z < 51) return true;        // champ
+    if (onCourse(x, z)) return true;                              // parcours et lice (chapitre II)
     return false;
   }
   {
@@ -680,5 +682,7 @@ export function buildWorld(scene) {
     return Math.abs(x) < 19 && z > -59 && z < -21; // intérieur du château
   }
 
-  return { resolve, update, isBare, quintain, circles, boxes, sun, sunDir };
+  function addBare(rect) { bare.push(rect); }
+
+  return { resolve, update, isBare, addBare, quintain, circles, boxes, sun, sunDir };
 }

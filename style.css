@@ -192,3 +192,12 @@ body.in-duel #compass, body.in-duel #prompt, body.in-duel #quest { display: none
   #player-bars { bottom: auto; top: 62px; width: 45vw; }
   #tuto { top: auto; bottom: 120px; }
 }
+
+/* ---------- Carte de chapitre ---------- */
+#chapter {
+  position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: rgba(15,10,6,0.85); opacity: 0; transition: opacity 1s; pointer-events: none; z-index: 15;
+}
+#chapter.show { opacity: 1; }
+#chapter-title { font-size: 1.3rem; letter-spacing: 0.4em; color: #c9a24a; text-transform: uppercase; }
+#chapter-sub { font-size: 2.6rem; color: #f3e6c8; margin-top: 0.5rem; }

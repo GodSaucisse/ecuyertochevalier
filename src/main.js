@@ -1,18 +1,22 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js?v=202611252021';
-import { Player } from './player.js?v=202611252021';
-import { Input } from './input.js?v=202611252021';
-import { UI } from './ui.js?v=202611252021';
-import { createNPCs } from './npcs.js?v=202611252021';
-import { QuestManager } from './quests.js?v=202611252021';
-import { initAudio, playHit, playSwing } from './audio.js?v=202611252021';
-import { createEnvironment } from './sky.js?v=202611252021';
-import { createPostFX } from './postfx.js?v=202611252021';
-import { createGrass } from './grass.js?v=202611252021';
-import { createParticles } from './particles.js?v=202611252021';
-import { Duel } from './duel.js?v=202611252021';
-import { loadSave, writeSave, clearSave } from './save.js?v=202611252021';
+import { buildWorld } from './world.js?v=202611252110';
+import { Player } from './player.js?v=202611252110';
+import { Input } from './input.js?v=202611252110';
+import { UI } from './ui.js?v=202611252110';
+import { createNPCs } from './npcs.js?v=202611252110';
+import { QuestManager } from './quests.js?v=202611252110';
+import { initAudio, playHit, playSwing } from './audio.js?v=202611252110';
+import { createEnvironment } from './sky.js?v=202611252110';
+import { createPostFX } from './postfx.js?v=202611252110';
+import { createGrass } from './grass.js?v=202611252110';
+import { createParticles } from './particles.js?v=202611252110';
+import { Duel } from './duel.js?v=202611252110';
+import { loadSave, writeSave, clearSave } from './save.js?v=202611252110';
+import { Horse } from './horse.js?v=202611252110';
+import { createCourse } from './course.js?v=202611252110';
+import { STABLE_HORSE } from './layout.js?v=202611252110';
+import { playLanceHit } from './audio.js?v=202611252110';
 
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 // Qualité graphique : "haute" sur ordinateur, allégée sur mobile. On peut forcer avec ?qualite=basse ou ?qualite=haute
@@ -41,6 +45,10 @@ window.addEventListener('resize', () => {
 
 // ---------- Jeu ----------
 const world = buildWorld(scene);
+// Chapitre II : parcours, lice et cheval (créés avant l'herbe pour qu'elle les évite)
+const course = createCourse(scene, world);
+const horse = new Horse(scene, world, STABLE_HORSE);
+horse.parts.root.add(course.lance);
 if (HIGH) world.sun.shadow.mapSize.set(4096, 4096);
 scene.environment = createEnvironment(renderer, world.sunDir);
 scene.environmentIntensity = 1.0;
@@ -52,6 +60,9 @@ const input = new Input(renderer.domElement, isTouch);
 const player = new Player(scene, world);
 const npcs = createNPCs(scene, world);
 const quests = new QuestManager({ ui, npcs, world });
+quests.horse = horse;
+quests.course = course;
+quests.onChapter = (title, subtitle) => showChapter(title, subtitle);
 
 // ---------- Duel ----------
 const duel = new Duel({
@@ -68,6 +79,7 @@ function save(showIndicator = true) {
   const ok = writeSave({
     ...quests.serialize(),
     pos: [player.position.x, player.position.z],
+    horse: { x: horse.position.x, z: horse.position.z, rot: horse.heading, mounted: horse.mounted },
     rot: player.object.rotation.y,
   });
   if (ok && showIndicator) {
@@ -103,13 +115,23 @@ function updateCamera(dt, look) {
     const portrait = camera.aspect < 1;
     cam.dist += ((portrait ? 5.6 : 4.1) - cam.dist) * Math.min(1, dt * 4);
     lookAtBias = e;
+  } else if (horse.mounted) {
+    // À cheval : la caméra se replace derrière le cheval quand il avance
+    cam.yaw -= look.dx * 0.0025;
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.0025, -0.1, 1.0);
+    if (Math.abs(horse.speed) > 1 && Math.abs(look.dx) < 1) {
+      const wanted = horse.heading + Math.PI;
+      const diff = Math.atan2(Math.sin(wanted - cam.yaw), Math.cos(wanted - cam.yaw));
+      cam.yaw += diff * Math.min(1, dt * 2.5);
+    }
+    cam.dist += ((camera.aspect < 1 ? 8.5 : 6.8) - cam.dist) * Math.min(1, dt * 3);
   } else {
     cam.yaw -= look.dx * 0.0025;
     cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.0025, -0.25, 1.25);
     cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom * 0.005, 2.5, 12);
   }
 
-  const desired = player.position.clone().add(new THREE.Vector3(0, 1.55, 0));
+  const desired = player.position.clone().add(new THREE.Vector3(0, horse.mounted ? 1.7 : 1.55, 0));
   if (lookAtBias) desired.lerp(new THREE.Vector3(lookAtBias.x, 1.4, lookAtBias.z), 0.3);
   camTarget.lerp(desired, 1 - Math.exp(-dt * 12));
   const cp = Math.cos(cam.pitch);
@@ -162,6 +184,40 @@ function checkStrike() {
   quests.onQuintainHit();
 }
 
+// Joute : la pointe de la lance passe-t-elle près de l'écu ?
+const tipPrev = new THREE.Vector3(), tipNow = new THREE.Vector3(), closest = new THREE.Vector3();
+let joustCooldown = 0;
+function checkJoust(dt) {
+  joustCooldown -= dt;
+  if (joustCooldown > 0) return;
+  horse.lanceTip(tipNow);
+  const shield = course.joust.shieldPos();
+  // Distance entre l'écu et le trajet de la pointe pendant cette image
+  const seg = tipNow.clone().sub(tipPrev);
+  const len2 = seg.lengthSq() || 1e-6;
+  const t = THREE.MathUtils.clamp(shield.clone().sub(tipPrev).dot(seg) / len2, 0, 1);
+  closest.copy(tipPrev).addScaledVector(seg, t);
+  if (course.joust.ready && closest.distanceTo(shield) < 1.2) {
+    joustCooldown = 1.5;
+    const fast = Math.abs(horse.speed) > 8;
+    if (fast) {
+      course.joust.hit(Math.sign(horse.speed) || 1);
+      playLanceHit();
+    } else playHit();
+    quests.onJoustHit(fast);
+  }
+}
+
+function showChapter(title, subtitle) {
+  const el = document.getElementById('chapter');
+  document.getElementById('chapter-title').textContent = title;
+  document.getElementById('chapter-sub').textContent = subtitle;
+  el.classList.remove('hidden');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3800);
+  setTimeout(() => el.classList.add('hidden'), 4800);
+}
+
 // ---------- Boucle principale ----------
 let started = false;
 let autoSaveIn = 8;
@@ -184,9 +240,22 @@ function frame() {
       duel.handleActions(actions, input.move);
     } else {
       const near = nearestNPC();
-      if (actions.interact && near) quests.talkTo(near);
-      if (actions.attack) player.startAttack();
-      if (actions.jump) player.jump();
+      const nearHorse = !horse.mounted && horse.position.distanceTo(player.position) < 2.6 && quests.step >= 7;
+      if (horse.mounted) {
+        if (actions.interact) {
+          if (near && Math.abs(horse.speed) < 1.5) quests.talkTo(near);
+          else if (Math.abs(horse.speed) < 1.5) { horse.setMounted(false); player.dismount(horse); course.lance.visible = false; save(false); }
+          else ui.toast('Ralentis pour descendre.', 1200);
+        }
+      } else if (actions.interact && near && (!nearHorse || near.object.position.distanceTo(player.position) < horse.position.distanceTo(player.position))) {
+        quests.talkTo(near);
+      } else if (actions.interact && nearHorse) {
+        horse.setMounted(true);
+        quests.onMounted();
+      } else {
+        if (actions.attack) player.startAttack();
+        if (actions.jump) player.jump();
+      }
     }
 
     const frozen = ui.dialogOpen && !duel.running;
@@ -195,13 +264,30 @@ function frame() {
       player.update(dtGame, ui.dialogOpen ? { x: 0, y: 0 } : input.move, false, cam.yaw, duel.lockTarget);
       duel.update(dtGame);
     } else {
-      player.update(dt, frozen ? { x: 0, y: 0 } : input.move, input.run, cam.yaw);
-      checkStrike();
+      if (horse.mounted) {
+        const m = frozen ? { x: 0, y: 0 } : input.move;
+        const prev = horse.position.clone();
+        tipPrev.copy(horse.lanceTip(tipNow));
+        horse.update(dt, { throttle: m.y, turn: m.x, gallop: input.run });
+        const withLance = quests.step >= 9;
+        course.lance.visible = withLance;
+        player.updateMounted(dt, horse, withLance);
+        if (quests.step === 8 && course.crossed(quests.gateIndex, prev, horse.position)) quests.onGatePassed();
+        if (withLance) checkJoust(dt);
+      } else {
+        horse.update(dt);
+        player.update(dt, frozen ? { x: 0, y: 0 } : input.move, input.run, cam.yaw);
+        checkStrike();
+      }
     }
 
     // Invite "Parler"
     const near = ui.dialogOpen || duel.running ? null : nearestNPC();
-    if (near) ui.setPrompt(`${isTouch ? '💬' : '[E]'} Parler à ${near.name}`);
+    const key = isTouch ? '💬' : '[E]';
+    if (ui.dialogOpen || duel.running) ui.setPrompt(null);
+    else if (horse.mounted) ui.setPrompt(near ? `${key} Parler à ${near.name}` : (Math.abs(horse.speed) < 1.5 ? `${key} Descendre de cheval` : null));
+    else if (quests.step >= 7 && horse.position.distanceTo(player.position) < 2.6) ui.setPrompt(`${key} Monter sur Tonnerre`);
+    else if (near) ui.setPrompt(`${key} Parler à ${near.name}`);
     else ui.setPrompt(null);
 
     // Objectif : losange + boussole
@@ -234,6 +320,7 @@ function frame() {
   }
 
   for (const n of npcs.list) if (!n.inCombat) n.update(dt, player.position);
+  course.update(dt);
   updateCamera(dt, look);
   world.update(dt, player.position, camera.position);
   grass.update(time);
@@ -264,7 +351,15 @@ if (existing) {
   document.getElementById('start').textContent = 'Nouvelle partie';
   cont.addEventListener('click', () => {
     quests.restore(existing);
-    if (existing.step === 4) {
+    if (existing.horse) {
+      horse.position.set(existing.horse.x, 0, existing.horse.z);
+      horse.object.rotation.y = existing.horse.rot;
+      horse.syncColliders();
+    }
+    if (existing.horse && existing.horse.mounted && existing.step >= 8) {
+      horse.setMounted(true);
+      player.updateMounted(0, horse, existing.step >= 9);
+    } else if (existing.step === 4) {
       // Reprise devant Bertrand pour relancer le duel
       player.position.set(21, 0, 0);
       player.object.rotation.y = Math.PI / 2;
@@ -284,4 +379,4 @@ document.getElementById('start').addEventListener('click', () => {
 });
 
 // Accès pour le débogage depuis la console du navigateur
-window.game = { player, world, npcs, quests, cam, duel };
+window.game = { player, world, npcs, quests, cam, duel, horse, course, input };
