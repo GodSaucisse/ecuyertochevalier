@@ -2,47 +2,72 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>D'Écuyer à Chevalier</title>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: #1b1410;
-      color: #f3e6c8;
-      font-family: Georgia, "Times New Roman", serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-    }
-    .panneau {
-      padding: 2.5rem 2rem;
-      border: 3px double #c9a24a;
-      background: #2a1f17;
-      max-width: 420px;
-      margin: 1rem;
-    }
-    h1 {
-      margin: 0 0 0.5rem;
-      font-size: 2rem;
-      color: #e8c66a;
-      letter-spacing: 0.03em;
-    }
-    .epee {
-      font-size: 3rem;
-      margin-bottom: 0.5rem;
-    }
-    p { line-height: 1.5; margin: 0.75rem 0; }
-    .petit { font-size: 0.9rem; opacity: 0.7; }
-  </style>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": { "three": "./lib/three.module.min.js" } }
+  </script>
 </head>
 <body>
-  <div class="panneau">
-    <div class="epee">⚔️</div>
-    <h1>D'Écuyer à Chevalier</h1>
-    <p>La quête commence bientôt…</p>
-    <p class="petit">Jeu en cours de création</p>
+  <div id="app"></div>
+
+  <!-- Interface de jeu -->
+  <div id="hud" class="hidden">
+    <div id="quest">
+      <div id="quest-title"></div>
+      <div id="quest-text"></div>
+    </div>
+    <div id="compass" class="hidden">
+      <div id="compass-arrow">➤</div>
+      <div id="compass-dist"></div>
+    </div>
+    <div id="prompt" class="hidden"></div>
+    <div id="toast" class="hidden"></div>
+    <div id="dialog" class="hidden">
+      <div id="dialog-name"></div>
+      <div id="dialog-text"></div>
+      <div id="dialog-next"></div>
+    </div>
   </div>
+
+  <!-- Commandes tactiles (mobile) -->
+  <div id="touch" class="hidden">
+    <div id="touch-left"></div>
+    <div id="touch-right"></div>
+    <div id="joy-base" class="hidden"><div id="joy-knob"></div></div>
+    <div id="touch-buttons">
+      <button id="btn-talk" class="tbtn">💬</button>
+      <button id="btn-jump" class="tbtn">⤒</button>
+      <button id="btn-attack" class="tbtn big">⚔️</button>
+    </div>
+  </div>
+
+  <!-- Écran titre -->
+  <div id="intro">
+    <div class="panneau">
+      <div class="epee">⚔️</div>
+      <h1>D'Écuyer à Chevalier</h1>
+      <p class="recit">
+        <em>Anno Domini 1126. Royaume de France, sous le règne de Louis VI.</em><br><br>
+        Fils cadet d'une famille modeste, tu arrives au château de Montclair
+        pour servir comme écuyer. Le chemin vers la chevalerie sera long…
+      </p>
+      <button id="start">Commencer</button>
+      <div class="controles" id="controls-desktop">
+        <b>Z Q S D</b> ou flèches : se déplacer · <b>Maj</b> : courir · <b>Espace</b> : sauter<br>
+        <b>Souris</b> : regarder (clic pour capturer, Échap pour libérer) · <b>Molette</b> : zoom<br>
+        <b>E</b> : parler · <b>Clic gauche</b> ou <b>F</b> : frapper
+      </div>
+      <div class="controles hidden" id="controls-touch">
+        Joystick à gauche : se déplacer (poussez à fond pour courir)<br>
+        Glisser à droite : tourner la caméra<br>
+        ⚔️ frapper · 💬 parler · ⤒ sauter
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>
