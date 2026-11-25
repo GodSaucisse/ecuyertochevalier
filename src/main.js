@@ -1,16 +1,16 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js';
-import { Player } from './player.js';
-import { Input } from './input.js';
-import { UI } from './ui.js';
-import { createNPCs } from './npcs.js';
-import { QuestManager } from './quests.js';
-import { initAudio, playHit, playSwing } from './audio.js';
-import { createEnvironment } from './sky.js';
-import { createPostFX } from './postfx.js';
-import { createGrass } from './grass.js';
-import { createParticles } from './particles.js';
+import { buildWorld } from './world.js?v=202611251954';
+import { Player } from './player.js?v=202611251954';
+import { Input } from './input.js?v=202611251954';
+import { UI } from './ui.js?v=202611251954';
+import { createNPCs } from './npcs.js?v=202611251954';
+import { QuestManager } from './quests.js?v=202611251954';
+import { initAudio, playHit, playSwing } from './audio.js?v=202611251954';
+import { createEnvironment } from './sky.js?v=202611251954';
+import { createPostFX } from './postfx.js?v=202611251954';
+import { createGrass } from './grass.js?v=202611251954';
+import { createParticles } from './particles.js?v=202611251954';
 
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 // Qualité graphique : "haute" sur ordinateur, allégée sur mobile. On peut forcer avec ?qualite=basse ou ?qualite=haute

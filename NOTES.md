@@ -29,6 +29,7 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `postfx.js` : post-traitement (GTAO, bloom, étalonnage).
   - `grass.js` : herbe animée par le vent. `particles.js` : poussière et feuilles mortes.
 - Tester en local : `python3 -m http.server` dans le dossier, puis ouvrir http://localhost:8000
+- **Avant chaque envoi sur GitHub : lancer `python3 tools/version.py`** (change le numéro de version des fichiers pour que les navigateurs chargent la nouvelle version au lieu de celle en cache).
 - Débogage : l'objet `window.game` donne accès au joueur, au monde, aux PNJ et aux quêtes.
 
 ## Carte (coordonnées x, z)

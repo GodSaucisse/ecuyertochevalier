@@ -1,5 +1,5 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
-import { playSuccess } from './audio.js';
+import { playSuccess } from './audio.js?v=202611251954';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
