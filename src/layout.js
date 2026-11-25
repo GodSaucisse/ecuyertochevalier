@@ -20,6 +20,13 @@ export const JOUST_QUINTAIN = { x: 54.6, z: 8 };
 /** Écuries du château (cheval au départ). */
 export const STABLE_HORSE = { x: -11, z: -34, rot: Math.PI / 2 };
 
+/** Chapitre III : route forestière vers l'abbaye, et clairière de l'embuscade. */
+export const ROAD = [
+  { x: 0, z: -27 }, { x: 0, z: -15 }, { x: -14, z: -15 }, { x: -32, z: -24 },
+  { x: -44, z: -36 }, { x: -51, z: -47 }, { x: -55, z: -54 },
+];
+export const AMBUSH = { x: -55, z: -54, r: 10 };
+
 /** Distance d'un point à un segment, au sol. */
 export function distToSegment(px, pz, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az;
@@ -36,5 +43,15 @@ export function onCourse(x, z, margin = 4.5) {
     prev = g;
   }
   if (distToSegment(x, z, prev.x, prev.z, LISTS.x, LISTS.z1) < margin) return true;
+  if (onRoad(x, z, margin)) return true;
+  if (Math.hypot(x - AMBUSH.x, z - AMBUSH.z) < AMBUSH.r + 2) return true;
   return Math.abs(x - LISTS.x) < LISTS.halfWidth + 6 && z > LISTS.z0 - 5 && z < LISTS.z1 + 8;
+}
+
+/** Vrai si le point est sur la route forestière. */
+export function onRoad(x, z, margin = 2) {
+  for (let i = 1; i < ROAD.length; i++) {
+    if (distToSegment(x, z, ROAD[i - 1].x, ROAD[i - 1].z, ROAD[i].x, ROAD[i].z) < margin) return true;
+  }
+  return false;
 }

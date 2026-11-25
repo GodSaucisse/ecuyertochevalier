@@ -1,7 +1,7 @@
 // Tonnerre, le cheval : modèle articulé, allures (pas, trot, galop) et conduite.
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611252110';
-import { playHoof } from './audio.js?v=202611252110';
+import { Tex } from './textures.js?v=202611252217';
+import { playHoof } from './audio.js?v=202611252217';
 
 const SPEEDS = { walk: 2.4, trot: 5.5, gallop: 11.5 };
 const RADIUS = 0.85;
@@ -20,16 +20,16 @@ function mesh(geo, material, parent, x = 0, y = 0, z = 0) {
 }
 
 /** Construit le cheval. Il regarde vers +Z, sabots à y = 0. */
-function buildHorse() {
+function buildHorse(coatColor = 0x7a4626, blanketColor = 0x22386e) {
   const coatTex = Tex.leather();
   const coatMap = coatTex.map.clone(); coatMap.repeat.set(3, 3); coatMap.needsUpdate = true;
-  const coat = mat(0x7a4626, { map: coatMap, roughness: 0.55 });
+  const coat = mat(coatColor, { map: coatMap, roughness: 0.55 });
   const dark = mat(0x1c1410, { roughness: 0.8 });
   const hoof = mat(0x2a2420, { roughness: 0.6 });
   const leather = mat(0x3a2414, { roughness: 0.6 });
   const clothTex = Tex.cloth();
   const blanketMap = clothTex.map.clone(); blanketMap.repeat.set(3, 3); blanketMap.needsUpdate = true;
-  const blanket = mat(0x22386e, { map: blanketMap, roughness: 0.95 });
+  const blanket = mat(blanketColor, { map: blanketMap, roughness: 0.95 });
   const gold = mat(0xd4a843, { metalness: 1, roughness: 0.35 });
   const steel = mat(0xb8bcc0, { metalness: 1, roughness: 0.3 });
 
@@ -119,9 +119,9 @@ function buildHorse() {
 }
 
 export class Horse {
-  constructor(scene, world, { x, z, rot }) {
+  constructor(scene, world, { x, z, rot, coat, blanket }) {
     this.world = world;
-    this.parts = buildHorse();
+    this.parts = buildHorse(coat, blanket);
     this.object = this.parts.root;
     this.object.position.set(x, 0, z);
     this.object.rotation.y = rot;

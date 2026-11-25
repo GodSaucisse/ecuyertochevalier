@@ -1,11 +1,51 @@
 // Petits effets sonores générés par le navigateur (aucun fichier audio nécessaire).
 let ctx = null;
+let sfxBus = null, musicBus = null, ambienceBus = null;
+let scale = 1; // volume relatif (sons lointains plus faibles)
+const volumes = { music: 0.5, sfx: 0.8 };
 
 export function initAudio() {
   try {
-    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    if (!ctx) {
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      sfxBus = ctx.createGain();
+      musicBus = ctx.createGain();
+      ambienceBus = ctx.createGain();
+      sfxBus.connect(ctx.destination);
+      musicBus.connect(ctx.destination);
+      ambienceBus.connect(sfxBus);
+      applyVolumes();
+    }
     if (ctx.state === 'suspended') ctx.resume();
   } catch (_) { ctx = null; }
+}
+
+function applyVolumes() {
+  if (!ctx) return;
+  sfxBus.gain.value = volumes.sfx;
+  musicBus.gain.value = volumes.music * 0.6;
+}
+
+export function setVolumes(music, sfx) {
+  volumes.music = music;
+  volumes.sfx = sfx;
+  applyVolumes();
+}
+
+export const audio = {
+  get ctx() { return ctx; },
+  get music() { return musicBus; },
+  get ambience() { return ambienceBus; },
+  get sfx() { return sfxBus; },
+};
+
+/** Joue un son comme s'il venait de loin : plus faible avec la distance (en mètres). */
+export function atDistance(distance, fn, maxDistance = 45) {
+  const k = Math.max(0, 1 - distance / maxDistance);
+  if (k <= 0) return;
+  const prev = scale;
+  scale = prev * k * k;
+  try { fn(); } finally { scale = prev; }
 }
 
 /** Coup sourd de bois. */
@@ -22,8 +62,8 @@ export function playHit() {
   filter.type = 'lowpass';
   filter.frequency.value = 900;
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.8, t);
-  src.connect(filter).connect(gain).connect(ctx.destination);
+  gain.gain.setValueAtTime(0.8 * scale, t);
+  src.connect(filter).connect(gain).connect(sfxBus);
   src.start(t);
 }
 
@@ -42,8 +82,8 @@ export function playSwing() {
   filter.frequency.setValueAtTime(600, t);
   filter.frequency.linearRampToValueAtTime(2200, t + len);
   const gain = ctx.createGain();
-  gain.gain.value = 0.12;
-  src.connect(filter).connect(gain).connect(ctx.destination);
+  gain.gain.value = 0.12 * scale;
+  src.connect(filter).connect(gain).connect(sfxBus);
   src.start(t);
 }
 
@@ -58,9 +98,9 @@ export function playSuccess() {
     const g = ctx.createGain();
     const start = t + i * 0.12;
     g.gain.setValueAtTime(0, start);
-    g.gain.linearRampToValueAtTime(0.18, start + 0.02);
+    g.gain.linearRampToValueAtTime(0.18 * scale, start + 0.02);
     g.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
-    osc.connect(g).connect(ctx.destination);
+    osc.connect(g).connect(sfxBus);
     osc.start(start);
     osc.stop(start + 0.55);
   });
@@ -80,8 +120,8 @@ function burst(len, type, freq, q, gainValue, decayPow = 3) {
   filter.frequency.value = freq;
   filter.Q.value = q;
   const gain = ctx.createGain();
-  gain.gain.value = gainValue;
-  src.connect(filter).connect(gain).connect(ctx.destination);
+  gain.gain.value = gainValue * scale;
+  src.connect(filter).connect(gain).connect(sfxBus);
   src.start(t);
 }
 
@@ -93,9 +133,9 @@ function tone(freq, len, gainValue, type = 'sine', slide = 1) {
   osc.frequency.setValueAtTime(freq, t);
   osc.frequency.exponentialRampToValueAtTime(freq * slide, t + len);
   const g = ctx.createGain();
-  g.gain.setValueAtTime(gainValue, t);
-  g.gain.exponentialRampToValueAtTime(0.001, t + len);
-  osc.connect(g).connect(ctx.destination);
+  g.gain.setValueAtTime(Math.max(0.0002, gainValue * scale), t);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+  osc.connect(g).connect(sfxBus);
   osc.start(t);
   osc.stop(t + len + 0.02);
 }
@@ -135,4 +175,28 @@ export function playHoof(intensity = 0.5) {
 export function playLanceHit() {
   burst(0.25, 'bandpass', 900, 2, 1.6, 2);
   tone(180, 0.3, 0.3, 'triangle', 0.5);
+}
+
+/** Cloche d'église (plusieurs harmoniques qui résonnent). */
+export function playBell() {
+  [[220, 1, 3.5], [440, 0.5, 2.5], [554, 0.25, 2], [660, 0.2, 1.6], [880, 0.12, 1.2]].forEach(([f, g, len]) => tone(f, len, 0.12 * g, 'sine', 0.998));
+}
+
+/** Marteau du forgeron sur l'enclume. */
+export function playAnvil() {
+  tone(1850, 0.35, 0.06, 'sine', 0.999);
+  tone(2470, 0.25, 0.03, 'sine', 0.999);
+  burst(0.04, 'highpass', 2500, 1, 0.5, 4);
+}
+
+/** Gloussement de poule. */
+export function playCluck() {
+  if (!ctx) return;
+  const n = 1 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < n; i++) setTimeout(() => tone(520 + Math.random() * 200, 0.08, 0.05, 'square', 0.6), i * 110);
+}
+
+/** Pas sur la terre (villageois, joueur). */
+export function playStep() {
+  burst(0.05, 'lowpass', 700, 1, 0.12, 3);
 }

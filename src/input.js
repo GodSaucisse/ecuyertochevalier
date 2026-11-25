@@ -11,18 +11,22 @@ export class Input {
     this.joy = { x: 0, y: 0 };
     this.look = { dx: 0, dy: 0 };
     this.zoom = 0;
-    this.actions = { interact: false, attack: false, jump: false, heavy: false, guard: null };
+    this.actions = { interact: false, attack: false, jump: false, heavy: false, guard: null, target: false, map: false, pause: false };
+    this.sens = 1;
     this.locked = false;
 
     window.addEventListener('keydown', (e) => {
       if (!this.enabled) return;
-      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
+      if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.code)) e.preventDefault();
       this.keys.add(e.code);
       if (e.repeat) return;
       if (e.code === 'Space') this.actions.jump = true;
       if (e.code === 'KeyE' || e.code === 'Enter') this.actions.interact = true;
       if (e.code === 'KeyF') this.actions.attack = true;
       if (e.code === 'KeyR') this.actions.heavy = true;
+      if (e.code === 'Tab') this.actions.target = true;
+      if (e.code === 'KeyM') this.actions.map = true;
+      if (e.code === 'Escape' || e.code === 'KeyP') this.actions.pause = true;
       if (e.code === 'Digit1' || e.code === 'Numpad4') this.actions.guard = 'L';
       if (e.code === 'Digit2' || e.code === 'Numpad8') this.actions.guard = 'T';
       if (e.code === 'Digit3' || e.code === 'Numpad6') this.actions.guard = 'R';
@@ -126,6 +130,7 @@ export class Input {
     bind('btn-talk', 'interact');
     bind('btn-heavy', 'heavy');
     bind('btn-dodge', 'jump');
+    bind('btn-target', 'target');
   }
 
   /** Direction de déplacement : x = droite/gauche, y = avant/arrière. */
@@ -151,12 +156,13 @@ export class Input {
   consumeActions() {
     const a = { ...this.actions };
     this.actions.interact = this.actions.attack = this.actions.jump = this.actions.heavy = false;
+    this.actions.target = this.actions.map = this.actions.pause = false;
     this.actions.guard = null;
     return a;
   }
 
   consumeLook() {
-    const l = { dx: this.look.dx, dy: this.look.dy, zoom: this.zoom };
+    const l = { dx: this.look.dx * this.sens, dy: this.look.dy * this.sens, zoom: this.zoom };
     this.look.dx = this.look.dy = 0;
     this.zoom = 0;
     return l;

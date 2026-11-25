@@ -1,7 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611252110';
-import { Fighter } from './combat.js?v=202611252110';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611252217';
+import { Fighter } from './combat.js?v=202611252217';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -39,6 +39,16 @@ export class Player {
   }
 
   get position() { return this.object.position; }
+
+  /** Change l'arme tenue en main (ex. : vraie épée au chapitre III). */
+  setSword(sword) {
+    this.h.handR.remove(this.sword);
+    sword.rotation.x = 0.45;
+    this.h.handR.add(sword);
+    this.sword = sword;
+    this.fighter.sword = sword;
+    this.fighter.swordBase = 0.45;
+  }
 
   /** Direction vers laquelle le personnage regarde (sur le sol). */
   forward(out = new THREE.Vector3()) {

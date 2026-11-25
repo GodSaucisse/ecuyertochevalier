@@ -2,7 +2,7 @@
 // et équipements d'époque (1126) : cotte de mailles, casque à nasal,
 // écu en amande, gambison, manteau, robe…
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611252110';
+import { Tex } from './textures.js?v=202611252217';
 
 // ---------- Matériaux (partagés entre personnages) ----------
 const matCache = {};
@@ -150,7 +150,7 @@ export function createSword(wooden = false) {
 export function createHumanoid(o = {}) {
   const opt = {
     outfit: 'gambeson', tunic: 0x3a5a8a, trousers: 0x4a4038, hair: 0x5a3a1e,
-    beard: null, helmet: false, coif: false, cloak: null, shield: false, scabbard: false,
+    beard: null, helmet: false, coif: false, hood: null, cloak: null, shield: false, scabbard: false,
     ...o,
   };
   const root = new THREE.Group();
@@ -244,6 +244,14 @@ export function createHumanoid(o = {}) {
     // Capuche de mailles laissant le visage découvert
     const coif = mesh(new THREE.SphereGeometry(0.128, 20, 14, Math.PI / 2 + 0.85, Math.PI * 2 - 1.7, 0, Math.PI * 0.78), M('mail'), head, 0, 0.0, -0.005);
     coif.scale.set(0.95, 1.1, 1.02);
+  } else if (opt.hood) {
+    // Capuche de tissu (brigands, voyageurs)
+    const hm = M('cloth:' + opt.hood);
+    hm.side = THREE.DoubleSide;
+    const hood = mesh(new THREE.SphereGeometry(0.14, 18, 12, Math.PI / 2 + 0.8, Math.PI * 2 - 1.6, 0, Math.PI * 0.8), hm, head, 0, 0.01, -0.012);
+    hood.scale.set(0.97, 1.12, 1.05);
+    const cowl = mesh(new THREE.CylinderGeometry(0.11, 0.24, 0.16, 16, 1, true), hm, spine, 0, 0.52, 0);
+    cowl.scale.z = 0.8;
   } else if (!opt.helmet && opt.outfit !== 'dress') {
     const hair = mesh(new THREE.SphereGeometry(0.122, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), M('hair:' + opt.hair), head, 0, 0.012, -0.018);
     hair.scale.set(0.95, 1.08, 1.02);
@@ -352,4 +360,20 @@ export function animateWalk(h, phase, amount, skipRightArm = false) {
   }
   h.spine.rotation.y = s * 0.08 * amount;
   h.spine.position.y = 0.98 - Math.abs(Math.cos(phase)) * 0.03 * amount;
+}
+
+/** Hache de brigand (fer vers +Z comme l'épée). */
+export function createAxe() {
+  const g = new THREE.Group();
+  mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.85, 8).rotateX(Math.PI / 2), M('wood'), g, 0, 0, 0.3);
+  const head = mesh(new THREE.BoxGeometry(0.02, 0.2, 0.16), M('steelDark'), g, 0, 0.07, 0.66);
+  head.rotation.x = 0.1;
+  return g;
+}
+
+/** Gourdin. */
+export function createClub() {
+  const g = new THREE.Group();
+  mesh(new THREE.CylinderGeometry(0.06, 0.025, 0.8, 8).rotateX(-Math.PI / 2), M('wood'), g, 0, 0, 0.32);
+  return g;
 }

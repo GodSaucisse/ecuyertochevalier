@@ -1,6 +1,6 @@
 // Personnages non-joueurs (PNJ).
 import * as THREE from 'three';
-import { createHumanoid } from './humanoid.js?v=202611252110';
+import { createHumanoid } from './humanoid.js?v=202611252217';
 
 function makeNPC(scene, world, { id, name, x, z, rotY, look, pose, talks = true }) {
   const h = createHumanoid(look);

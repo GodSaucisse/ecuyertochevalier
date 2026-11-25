@@ -33,7 +33,13 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `save.js` : sauvegarde automatique dans le navigateur (localStorage).
   - `horse.js` : Tonnerre, le cheval (modèle articulé, pas/trot/galop, conduite, cavalier en selle, pointe de lance).
   - `course.js` : parcours de 8 portes à bannières, lice de joute, quintaine de joute, tribune, spectateurs, lance.
-  - `layout.js` : emplacements du chapitre II (portes, lice, écurie) ; le décor évite d'y planter des arbres.
+  - `layout.js` : emplacements des chapitres II et III (portes, lice, écurie, route de l'abbaye, clairière) ; le décor évite d'y planter des arbres.
+  - `battle.js` : combat contre plusieurs ennemis (hérite du duel) ; cible verrouillée, Tab / 🎯 pour changer.
+  - `chapter3.js` : route forestière, cheval gris de Sire Godefroy (escorte aller/retour), brigands, embuscade, combat mis en scène du seigneur.
+  - `life.js` : forge et forgeron Gautier, villageois qui se promènent (et parlent), poules.
+  - `music.js` : musique générée en direct (mode dorien de ré : luth, flûte, bourdon ; en combat : vièle et tambour).
+  - `ambience.js` : vent, oiseaux, cloche de l'église. Sons selon la distance : `atDistance()` dans audio.js.
+  - `settings.js` : réglages (volumes, sensibilité, qualité). `map.js` : carte du monde (menu pause).
 
 ## Combat (inspiré de For Honor)
 - Garde vue depuis le combattant : 'L' (sa gauche), 'T' (haut), 'R' (sa droite). Une attaque lancée depuis d arrive sur le côté mirror(d) du défenseur.
@@ -68,7 +74,10 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
 ## Quête (quests.js, étapes)
 Chapitre I : 0 seigneur → 1 Bertrand → 2 quintaine ×5 → 3 retour à Bertrand → 4 duel → 5 raconter au seigneur
 Chapitre II « En selle » : 6 Bertrand aux écuries → 7 monter sur Tonnerre → 8 franchir les 8 portes → 9 joute ×3 au galop
-→ 10 Bertrand à l'entrée de la lice → 11 rapport au seigneur → 12 fin du chapitre II
+→ 10 Bertrand à l'entrée de la lice → 11 rapport au seigneur
+Chapitre III « L'embuscade » : 12 Godefroy dans la cour (donne une épée d'acier) → 13 escorte à cheval sur la route
+→ 14 embuscade (3 brigands, Godefroy contre un 4e) → 15 dialogue → 16 retour au château → 17 Godefroy dans la cour → 18 fin
+(Une sauvegarde à l'étape 14 reprend à l'étape 13.)
 Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 
 ## Cheval
@@ -81,11 +90,12 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Combat à la For Honor
 - [x] Sauvegarde automatique
 - [x] Chapitre II : équitation, parcours, joute
+- [x] Chapitre III : escorte, embuscade, combat contre plusieurs ennemis
+- [x] Musique, ambiance sonore, village vivant
+- [x] Menu pause, réglages, carte
 - [x] Graphismes « For Honor » : lumière, matériaux, armures
 - [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
-- [ ] Combats contre de vrais adversaires (brigands…), plusieurs ennemis
 - [ ] Caméra qui évite de traverser les murs
 - [ ] Intérieurs des bâtiments
-- [ ] Musique d'ambiance
-- [ ] Chapitre III (sortie hors des terres avec le seigneur ?)
+- [ ] Chapitre IV : qui a renseigné les brigands ? (enquête) puis la cour du comte à la Pentecôte
 - [ ] Adoubement (fin du jeu)

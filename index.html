@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>D'Écuyer à Chevalier</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=202611252110">
+  <link rel="stylesheet" href="style.css?v=202611252217">
   <script type="importmap">
     { "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }
   </script>
@@ -46,10 +46,55 @@
     <div id="hurt"></div>
     <div id="chapter" class="hidden"><div id="chapter-title"></div><div id="chapter-sub"></div></div>
     <div id="saved" class="hidden">💾 Partie sauvegardée</div>
+    <button id="btn-pause" title="Pause (Échap)">⏸</button>
+    <button id="btn-map" title="Carte (M)">🗺️</button>
     <div id="dialog" class="hidden">
       <div id="dialog-name"></div>
       <div id="dialog-text"></div>
       <div id="dialog-next"></div>
+    </div>
+  </div>
+
+  <!-- Menu pause -->
+  <div id="pause" class="hidden">
+    <div class="panneau menu">
+      <h2>Pause</h2>
+      <div class="tabs">
+        <button data-tab="carte">Carte</button>
+        <button data-tab="reglages">Réglages</button>
+        <button data-tab="commandes">Commandes</button>
+      </div>
+      <div class="tab" id="tab-carte"><canvas id="map" width="560" height="560"></canvas></div>
+      <div class="tab" id="tab-reglages">
+        <label>Musique <input type="range" id="set-music" min="0" max="1" step="0.05"></label>
+        <label>Effets sonores <input type="range" id="set-sfx" min="0" max="1" step="0.05"></label>
+        <label>Sensibilité de la caméra <input type="range" id="set-sens" min="0.3" max="2.5" step="0.1"></label>
+        <label>Qualité graphique
+          <select id="set-quality">
+            <option value="auto">Automatique</option>
+            <option value="haute">Haute (ordinateur)</option>
+            <option value="basse">Basse (téléphone, vieux PC)</option>
+          </select>
+        </label>
+        <div id="quality-note" class="note hidden">La qualité change au prochain chargement. <button id="apply-quality">Appliquer maintenant</button></div>
+      </div>
+      <div class="tab" id="tab-commandes">
+        <div class="controls-desk">
+          <p><b>Déplacements</b> : Z Q S D ou flèches · <b>Maj</b> courir · <b>Espace</b> sauter · souris : regarder · molette : zoom</p>
+          <p><b>Actions</b> : <b>E</b> parler / monter à cheval · <b>clic gauche</b> ou <b>F</b> frapper · <b>M</b> carte · <b>Échap</b> pause</p>
+          <p><b>Combat</b> : souris (ou 1, 2, 3) = garde gauche / haut / droite · clic gauche = coup léger · clic droit ou <b>R</b> = coup lourd · <b>Espace</b> = esquive · <b>Tab</b> = changer de cible</p>
+          <p><b>À cheval</b> : Z avancer · <b>Maj</b> galop · Q / D tourner · S freiner · <b>E</b> descendre</p>
+        </div>
+        <div class="controls-touch">
+          <p><b>Joystick</b> (gauche) : se déplacer, poussé à fond pour courir ou galoper · glisser à droite : caméra</p>
+          <p>⚔️ frapper · 💬 parler / monter / descendre · ⤒ sauter · 🗺️ carte · ⏸ pause</p>
+          <p><b>Combat</b> : glisser à droite = garde · ⚔️ léger · 💥 lourd · ↶ esquive · 🎯 changer de cible</p>
+        </div>
+      </div>
+      <div class="boutons">
+        <button id="resume">Reprendre</button>
+        <button id="to-title">Écran titre</button>
+      </div>
     </div>
   </div>
 
@@ -61,6 +106,7 @@
     <div id="touch-buttons">
       <button id="btn-talk" class="tbtn">💬</button>
       <button id="btn-jump" class="tbtn">⤒</button>
+      <button id="btn-target" class="tbtn duel-only multi-only">🎯</button>
       <button id="btn-dodge" class="tbtn duel-only">↶</button>
       <button id="btn-heavy" class="tbtn big duel-only">💥</button>
       <button id="btn-attack" class="tbtn big">⚔️</button>
@@ -97,6 +143,6 @@
     </div>
   </div>
 
-  <script type="module" src="src/main.js?v=202611252110"></script>
+  <script type="module" src="src/main.js?v=202611252217"></script>
 </body>
 </html>

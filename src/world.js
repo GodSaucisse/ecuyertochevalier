@@ -1,8 +1,8 @@
 // Le monde : terrain, château de Montclair, village, église, terrain d'entraînement, forêt.
 import * as THREE from 'three';
-import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611252110';
-import { createSky, SKY } from './sky.js?v=202611252110';
-import { onCourse } from './layout.js?v=202611252110';
+import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611252217';
+import { createSky, SKY } from './sky.js?v=202611252217';
+import { onCourse } from './layout.js?v=202611252217';
 
 // Générateur aléatoire "à graine" : le monde est identique à chaque partie.
 function mulberry32(seed) {
@@ -532,6 +532,17 @@ export function buildWorld(scene) {
       if (trees.some(t => (t.x - x) ** 2 + (t.z - z) ** 2 < 9)) continue;
       trees.push({ x, z, s: 0.8 + rng() * 0.6, pine: rng() < 0.4 });
     }
+    // Forêt épaisse à l'ouest, le long de la route de l'abbaye (chapitre III)
+    tries = 0;
+    let added = 0;
+    while (added < 260 && tries < 8000) {
+      tries++;
+      const x = -24 - rng() * 66, z = 4 - rng() * 92;
+      if (Math.hypot(x, z) > WORLD_RADIUS + 25 || blocked(x, z)) continue;
+      if (trees.some(t => (t.x - x) ** 2 + (t.z - z) ** 2 < 7)) continue;
+      trees.push({ x, z, s: 0.9 + rng() * 0.7, pine: rng() < 0.55 });
+      added++;
+    }
     const trunkGeo = metricCylinderUV(new THREE.CylinderGeometry(0.16, 0.3, 2.6, 7), 0.25, 2.6);
     trunkGeo.translate(0, 1.3, 0);
     const blobGeo = new THREE.IcosahedronGeometry(1.25, 1);
@@ -674,8 +685,10 @@ export function buildWorld(scene) {
     }
   }
 
+  const bareFns = [];
   /** Pas d'herbe sur les chemins, dans les cours, sous les bâtiments… */
   function isBare(x, z) {
+    for (const f of bareFns) if (f(x, z)) return true;
     for (const b of bare) if (x > b.minX - 0.2 && x < b.maxX + 0.2 && z > b.minZ - 0.2 && z < b.maxZ + 0.2) return true;
     for (const b of boxes) if (x > b.minX - 0.3 && x < b.maxX + 0.3 && z > b.minZ - 0.3 && z < b.maxZ + 0.3) return true;
     for (const c of circles) if ((x - c.x) ** 2 + (z - c.z) ** 2 < (c.r + 0.2) ** 2) return true;
@@ -683,6 +696,7 @@ export function buildWorld(scene) {
   }
 
   function addBare(rect) { bare.push(rect); }
+  function addBareFn(fn) { bareFns.push(fn); }
 
-  return { resolve, update, isBare, addBare, quintain, circles, boxes, sun, sunDir };
+  return { resolve, update, isBare, addBare, addBareFn, bare, quintain, circles, boxes, sun, sunDir };
 }

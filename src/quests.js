@@ -1,6 +1,6 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
 import * as THREE from 'three';
-import { playSuccess } from './audio.js?v=202611252110';
+import { playSuccess } from './audio.js?v=202611252217';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -36,6 +36,10 @@ export class QuestManager {
       case 9: return this.course ? this.course.joust : null;
       case 10: return this.npcs.bertrand;
       case 11: return this.npcs.godefroy;
+      case 12: return this.npcs.godefroy;
+      case 13: return this.npcs.godefroy.inCombat ? { position: this.npcs.godefroy.object.position, markerHeight: 3.3 } : this.npcs.godefroy;
+      case 16: return { position: this.npcs.godefroy.object.position, markerHeight: 3.3 };
+      case 17: return this.npcs.godefroy;
       default: return null;
     }
   }
@@ -55,7 +59,13 @@ export class QuestManager {
       case 9: ui.setQuest('Chapitre II · La lice', `Charge la quintaine au galop et frappe l'écu avec ta lance (${this.joustHits}/3).`); break;
       case 10: ui.setQuest('Chapitre II · La lice', 'Va voir Bertrand à l\'entrée de la lice.'); break;
       case 11: ui.setQuest('Chapitre II · La lice', 'Rentre au château et fais ton rapport à Sire Godefroy.'); break;
-      default: ui.setQuest('Fin du chapitre II', 'Explore librement Montclair. Le chapitre III arrive bientôt !');
+      case 12: ui.setQuest('Chapitre III · L\'embuscade', 'Rejoins Sire Godefroy dans la cour du château : il a une mission pour toi.'); break;
+      case 13: ui.setQuest('Chapitre III · L\'embuscade', 'Monte sur Tonnerre et escorte Sire Godefroy sur la route de l\'abbaye. Reste près de lui !'); break;
+      case 14: ui.setQuest('Chapitre III · L\'embuscade', 'Des brigands ! Défends Sire Godefroy !'); break;
+      case 15: ui.setQuest('Chapitre III · L\'embuscade', 'Parle à Sire Godefroy.'); break;
+      case 16: ui.setQuest('Chapitre III · L\'embuscade', 'Rentre au château avec Sire Godefroy.'); break;
+      case 17: ui.setQuest('Chapitre III · L\'embuscade', 'Parle à Sire Godefroy dans la cour.'); break;
+      default: ui.setQuest('Fin du chapitre III', 'Explore librement Montclair. La suite arrive bientôt !');
     }
   }
 
@@ -71,9 +81,23 @@ export class QuestManager {
   placeNPCs() {
     const b = this.npcs.bertrand;
     if (this.duelRunning && this.duelRunning()) return;
+    if (this.onPlace) this.onPlace(this.step);
     if (this.step >= 6 && this.step <= 7) b.moveTo(-11.5, -29.5, Math.PI);
     else if (this.step >= 8 && this.step <= 10) b.moveTo(52, 45, Math.PI);
     else b.moveTo(23, -3, -Math.PI / 2);
+  }
+
+  /** Après la victoire contre les brigands. */
+  afterAmbushDialog() {
+    const N = this.npcs.godefroy.name;
+    this.ui.showDialog([
+      [N, 'Tu n\'es pas blessé ? … Par tous les saints, tu t\'es battu comme un lion.'],
+      [N, 'Ces brigands n\'étaient pas là par hasard. Quelqu\'un savait que nous passerions par ici avec la dîme.'],
+      [N, 'Nous n\'irons pas plus loin aujourd\'hui. Rentrons au château, et garde la main sur ton épée.'],
+    ], () => {
+      this.goTo(16);
+      if (this.onReturn) this.onReturn();
+    });
   }
 
   onMounted() {
@@ -161,6 +185,13 @@ export class QuestManager {
   talkTo(npc) {
     const ui = this.ui;
     const N = npc.name;
+    // Personnages secondaires : répliques qui tournent
+    if (npc.lines) {
+      npc.lineIndex = (npc.lineIndex ?? -1) + 1;
+      const line = npc.lines[npc.lineIndex % npc.lines.length];
+      ui.showDialog(line.map((t) => [N, t]));
+      return;
+    }
     if (npc.id === 'godefroy') {
       if (this.step === 0) {
         ui.showDialog([
@@ -189,10 +220,36 @@ export class QuestManager {
         ], () => {
           playSuccess();
           this.goTo(12);
-          this.ui.toast('Fin du chapitre II. La suite arrive bientôt !', 5000);
+          if (this.onChapter) this.onChapter('Chapitre III', 'L\'embuscade');
         });
-      } else if (this.step >= 12) {
-        ui.showDialog([[N, 'Repose-toi, écuyer. Les jours à venir seront moins paisibles.']]);
+      } else if (this.step === 12) {
+        ui.showDialog([
+          [N, 'Écuyer ! Nous partons sur-le-champ pour l\'abbaye de Saint-Aubin. Je dois y porter la dîme et une lettre pour l\'abbé.'],
+          [N, 'La route traverse la forêt. On dit que des brigands y rôdent depuis la Saint-Michel.'],
+          [N, 'Tiens. Une épée d\'acier, forgée par Gautier. Elle était à mon frère. Fais-lui honneur.'],
+          [N, 'En selle ! Reste près de moi sur la route.'],
+        ], () => {
+          playSuccess();
+          if (this.onSwordGiven) this.onSwordGiven();
+          this.goTo(13);
+          if (this.onEscort) this.onEscort();
+        });
+      } else if (this.step === 13 || this.step === 14 || this.step === 16) {
+        ui.showDialog([[N, 'Pas le temps de bavarder, écuyer. Ouvre l\'œil.']]);
+      } else if (this.step === 15) {
+        this.afterAmbushDialog();
+      } else if (this.step === 17) {
+        ui.showDialog([
+          [N, 'Nous voilà rentrés. L\'abbé attendra sa dîme : je ne risquerai pas la vie de mes gens pour quelques pièces.'],
+          [N, 'Aujourd\'hui, tu as protégé ton seigneur au péril de ta vie. C\'est le premier devoir d\'un chevalier.'],
+          [N, 'À la Pentecôte, quand le comte tiendra sa cour, je demanderai qu\'on t\'adoube. D\'ici là… continue de t\'entraîner.'],
+        ], () => {
+          playSuccess();
+          this.goTo(18);
+          this.ui.toast('Fin du chapitre III. La suite arrive bientôt !', 5000);
+        });
+      } else if (this.step >= 18) {
+        ui.showDialog([[N, 'La Pentecôte approche, écuyer. Tiens-toi prêt.']]);
       } else {
         ui.showDialog([[N, 'Bertrand t\'attend. Ne fais pas attendre un homme qui manie l\'épée mieux que toi.']]);
       }
