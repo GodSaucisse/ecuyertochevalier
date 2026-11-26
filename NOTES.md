@@ -41,6 +41,7 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `ambience.js` : vent, oiseaux, cloche de l'église. Sons selon la distance : `atDistance()` dans audio.js.
   - `settings.js` : réglages (volumes, sensibilité, qualité). `map.js` : carte du monde (menu pause).
   - `timeofday.js` : jour/nuit (1 h de jeu = 2 min), soleil/lune, couleurs du ciel, nuages, étoiles, torches, fenêtres éclairées, météo (clair, nuageux, brume, pluie). `lockWeather()` pour imposer une météo pendant l'histoire.
+  - `chapter5.js` : route de l'est, chevaux de Godefroy (gris) et Bertrand (noir), piège du Borgne (Godefroy et Bertrand battent leur brigand puis viennent aider), cour du comte Thibaut, nobles, serment, adoubement.
   - `economy.js` : deniers, équipement (casque, écu, cotte de mailles, épée d'acier) et boutique de Gautier. `Player.applyEquipment()` change l'apparence et les stats (defenseMul, blockCostMul, damageMul).
   - `interiors.js` : grande salle du donjon (Hersende), église (autel : « Prier »), taverne « À la Pomme d'Or » (Raoul, deux clients). Pièces construites à x = 250, entrée/sortie par fondu ; la caméra reste entre les murs.
   - `chapter4.js` : croix de pierre, buissons, Aymeric l'intendant (le traître), père Anselme, le Borgne, lanterne, rencontre nocturne et filature.
@@ -66,6 +67,10 @@ Chapitre IV « Le traître » : 18 Godefroy confie l'enquête → 19 trois témo
 → 22 filature (repéré si à moins de 13 m quand il se retourne, ou à moins de 3,5 m ; perdu au-delà de 34 m)
 → 23 dénoncer à Godefroy → combat contre Aymeric → saut au petit matin → 24 fin du chapitre IV.
 (Une sauvegarde aux étapes 21-22 reprend à l'étape 20.)
+Chapitre V « La Pentecôte » : 24 Godefroy annonce le départ → 25 rejoindre Godefroy et Bertrand à cheval devant la porte
+→ 26 chevauchée vers l'est, piège du Borgne (Borgne 110 PV + 2 hommes) → fondu « Le lendemain, à la cour du comte… »
+→ 27 grande salle du comte (pièce « court » d'interiors.js) : s'agenouiller (E), serment, adoubement, manteau + 100 deniers
+→ écran de fin → 28 jeu libre, chevalier de Montclair. (Une sauvegarde à l'étape 26 reprend à l'étape 25.)
 Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 
 ## Deniers
@@ -94,5 +99,6 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Graphismes « For Honor » : lumière, matériaux, armures
 - [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
 - [ ] Caméra qui évite de traverser les murs
-- [ ] Chapitre V : la route de la Pentecôte (le Borgne attend), puis l'adoubement à la cour du comte
-- [ ] Adoubement (fin du jeu)
+- [x] Chapitre V : la Pentecôte, le Borgne capturé, l'adoubement (fin de l'histoire)
+- [ ] Quêtes secondaires, mini-jeux (tir à l'arc, dés, courses), chasse
+- [ ] Finitions : bruits de pas, caméra qui évite les murs dehors, tutoriel

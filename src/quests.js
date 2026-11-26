@@ -1,7 +1,7 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
 import * as THREE from 'three';
-import { HIDE } from './layout.js?v=202611261218';
-import { playSuccess } from './audio.js?v=202611261218';
+import { HIDE } from './layout.js?v=202611261343';
+import { playSuccess } from './audio.js?v=202611261343';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -55,6 +55,9 @@ export class QuestManager {
         return a ? { position: a.object.position, markerHeight: 2.6 } : null;
       }
       case 23: return this.npcs.godefroy;
+      case 24: return this.npcs.godefroy;
+      case 25: case 26: return { position: this.npcs.godefroy.object.position, markerHeight: 3.3 };
+      case 27: return this.kneelSpot ? { position: this.kneelSpot, markerHeight: 1.6 } : null;
       default: return null;
     }
   }
@@ -86,7 +89,11 @@ export class QuestManager {
       case 21: ui.setQuest('Chapitre IV · Le traître', 'Reste caché dans les buissons et écoute…'); break;
       case 22: ui.setQuest('Chapitre IV · Le traître', 'Suis l\'intendant jusqu\'au château sans te faire repérer. Quand il se retourne (👁), recule ou reste loin !'); break;
       case 23: ui.setQuest('Chapitre IV · Le traître', 'Dénonce l\'intendant à Sire Godefroy, dans la cour.'); break;
-      default: ui.setQuest('Fin du chapitre IV', 'Explore librement Montclair. La suite arrive bientôt !');
+      case 24: ui.setQuest('Chapitre V · La Pentecôte', 'Sire Godefroy t\'attend dans la cour : c\'est le jour du départ pour la cour du comte.'); break;
+      case 25: ui.setQuest('Chapitre V · La Pentecôte', 'Équipe-toi si tu veux, puis monte sur Tonnerre et rejoins Sire Godefroy et Bertrand devant la porte du château.'); break;
+      case 26: ui.setQuest('Chapitre V · La Pentecôte', 'Chevauche avec eux vers l\'est, par la forêt. Reste près de Sire Godefroy.'); break;
+      case 27: ui.setQuest('Chapitre V · La Pentecôte', 'Avance jusqu\'au comte et agenouille-toi devant lui.'); break;
+      default: ui.setQuest('Chevalier de Montclair', 'Tu es chevalier ! Explore Montclair librement. D\'autres aventures viendront…');
     }
   }
 
@@ -103,6 +110,7 @@ export class QuestManager {
     const b = this.npcs.bertrand;
     if (this.duelRunning && this.duelRunning()) return;
     if (this.onPlace) this.onPlace(this.step);
+    if (this.step >= 25 && this.step <= 27) return; // chapitre V : Bertrand voyage avec le seigneur
     if (this.step >= 6 && this.step <= 7) b.moveTo(-11.5, -29.5, Math.PI);
     else if (this.step >= 8 && this.step <= 10) b.moveTo(52, 45, Math.PI);
     else b.moveTo(23, -3, -Math.PI / 2);
@@ -133,7 +141,7 @@ export class QuestManager {
       playSuccess();
       this.reward(60, 'récompense de Sire Godefroy');
       this.goTo(24);
-      setTimeout(() => this.ui.toast('Fin du chapitre IV. La suite arrive bientôt !', 5000), 2500);
+      setTimeout(() => { if (this.onChapter) this.onChapter('Chapitre V', 'La Pentecôte'); }, 3800);
     });
   }
 
@@ -411,8 +419,14 @@ export class QuestManager {
           [N, 'Gardes ! Qu\'on l\'arrête sur-le-champ !'],
           ['Aymeric, l\'intendant', 'Jamais ! Écarte-toi, écuyer, ou je te passe au fil de l\'épée !'],
         ], () => { if (this.onFinalFight) this.onFinalFight(); });
-      } else if (this.step >= 24) {
-        ui.showDialog([[N, 'Grâce à toi, Montclair dort tranquille… pour l\'instant. La Pentecôte approche.']]);
+      } else if (this.step === 24) {
+        ui.showDialog([
+          [N, 'Le grand jour est arrivé, écuyer. Nous partons pour la cour du comte Thibaut, qui réunit ses vassaux pour la Pentecôte.'],
+          [N, 'Bertrand vient avec nous. Le Borgne court toujours : nous prendrons la route de l\'est, par la forêt. Garde la main sur ton épée.'],
+          [N, 'Passe chez Gautier si tu veux t\'équiper, puis monte sur Tonnerre et rejoins-nous devant la porte du château.'],
+        ], () => { this.goTo(25); if (this.onDeparture) this.onDeparture(); });
+      } else if (this.step >= 28) {
+        ui.showDialog([[N, 'Chevalier… J\'ai encore du mal à m\'y faire. Mais tu l\'as mérité. Montclair est fier de toi.']]);
       } else {
         ui.showDialog([[N, 'Bertrand t\'attend. Ne fais pas attendre un homme qui manie l\'épée mieux que toi.']]);
       }

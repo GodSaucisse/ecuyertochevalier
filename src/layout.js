@@ -36,6 +36,13 @@ export const STEWARD_PATH = [
   { x: 0, z: -17 }, { x: 0, z: -24 }, { x: 3, z: -28 }, { x: 4, z: -38 }, { x: 3.5, z: -39.5 },
 ];
 
+/** Chapitre V : la route de l'est vers la cour du comte, et le piège du Borgne. */
+export const ROAD2 = [
+  { x: 0, z: -12 }, { x: 10, z: -13 }, { x: 30, z: -14 }, { x: 44, z: -24 },
+  { x: 56, z: -32 }, { x: 66, z: -42 },
+];
+export const AMBUSH2 = { x: 66, z: -42, r: 9 };
+
 /** Distance d'un point à un segment, au sol. */
 export function distToSegment(px, pz, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az;
@@ -53,6 +60,10 @@ export function onCourse(x, z, margin = 4.5) {
   }
   if (distToSegment(x, z, prev.x, prev.z, LISTS.x, LISTS.z1) < margin) return true;
   if (onRoad(x, z, margin)) return true;
+  for (let i = 1; i < ROAD2.length; i++) {
+    if (distToSegment(x, z, ROAD2[i - 1].x, ROAD2[i - 1].z, ROAD2[i].x, ROAD2[i].z) < margin) return true;
+  }
+  if (Math.hypot(x - AMBUSH2.x, z - AMBUSH2.z) < AMBUSH2.r + 2) return true;
   if (Math.hypot(x - CROSS.x, z - CROSS.z) < 9 || Math.hypot(x - HIDE.x, z - HIDE.z) < 4) return true;
   for (let i = 1; i < 4; i++) {
     const a = STEWARD_PATH[i - 1], b = STEWARD_PATH[i];
@@ -66,6 +77,14 @@ export function onCourse(x, z, margin = 4.5) {
 export function onRoad(x, z, margin = 2) {
   for (let i = 1; i < ROAD.length; i++) {
     if (distToSegment(x, z, ROAD[i - 1].x, ROAD[i - 1].z, ROAD[i].x, ROAD[i].z) < margin) return true;
+  }
+  return false;
+}
+
+/** Vrai si le point est sur la route de l'est (chapitre V). */
+export function onRoad2(x, z, margin = 2) {
+  for (let i = 1; i < ROAD2.length; i++) {
+    if (distToSegment(x, z, ROAD2[i - 1].x, ROAD2[i - 1].z, ROAD2[i].x, ROAD2[i].z) < margin) return true;
   }
   return false;
 }

@@ -15,6 +15,10 @@ export const ITEMS = {
     name: 'Cotte de mailles', icon: '🧥', price: 120, slot: 'body',
     desc: 'Des milliers d\'anneaux d\'acier. Les coups reçus font 25 % de dégâts en moins.',
   },
+  manteau: {
+    name: 'Manteau de chevalier', icon: '🧣', price: 0, slot: 'cloak', hidden: true,
+    desc: 'Aux couleurs de Montclair. Offert lors de l\'adoubement.',
+  },
   epee: {
     name: 'Épée d\'acier', icon: '🗡️', price: 80, slot: 'weapon',
     desc: 'Une vraie lame, équilibrée par Gautier. Tes coups font 40 % de dégâts en plus.',
@@ -86,6 +90,7 @@ export class Economy {
     const list = $('shop-list');
     list.textContent = '';
     for (const [id, it] of Object.entries(ITEMS)) {
+      if (it.hidden) continue;
       const row = document.createElement('div');
       row.className = 'shop-item' + (this.has(id) ? ' owned' : '');
       row.innerHTML = `<div class="shop-icon">${it.icon}</div>

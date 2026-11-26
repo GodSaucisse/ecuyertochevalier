@@ -1,7 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261218';
-import { Fighter } from './combat.js?v=202611261218';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261343';
+import { Fighter } from './combat.js?v=202611261343';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -54,6 +54,7 @@ export class Player {
       outfit: eq.haubert ? 'mail' : 'gambeson',
       trousers: this.look.trousers, hair: this.look.hair,
       helmet: !!eq.casque, coif: !!eq.haubert && !!eq.casque, shield: !!eq.ecu,
+      cloak: eq.manteau ? 0x22386e : null,
     });
     this.object = this.h.root;
     this.object.position.copy(pos);

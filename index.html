@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>D'Écuyer à Chevalier</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=202611261218">
+  <link rel="stylesheet" href="style.css?v=202611261343">
   <script type="importmap">
     { "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }
   </script>
@@ -65,6 +65,21 @@
       <div id="shop-money"></div>
       <div id="shop-list"></div>
       <div class="boutons"><button id="shop-close">Fermer</button></div>
+    </div>
+  </div>
+
+  <!-- Écran de fin -->
+  <div id="ending" class="hidden">
+    <div class="panneau menu">
+      <div class="epee">⚔️</div>
+      <h2>Chevalier de Montclair</h2>
+      <p class="recit"><em>Anno Domini 1127, en la fête de Pentecôte.</em><br><br>
+        Arrivé à Montclair comme simple écuyer, tu as appris l'épée, le cheval et la lance,
+        défendu ton seigneur contre les brigands, démasqué un traître et livré le Borgne à la justice du comte.<br><br>
+        Aujourd'hui, le comte Thibaut t'a fait <b>chevalier</b>.</p>
+      <div id="ending-stats"></div>
+      <p class="petit">Merci d'avoir joué ! Un jeu créé par GodSaucisse, avec Claude.</p>
+      <div class="boutons"><button id="ending-continue">Continuer à explorer</button></div>
     </div>
   </div>
 
@@ -162,6 +177,6 @@
     </div>
   </div>
 
-  <script type="module" src="src/main.js?v=202611261218"></script>
+  <script type="module" src="src/main.js?v=202611261343"></script>
 </body>
 </html>

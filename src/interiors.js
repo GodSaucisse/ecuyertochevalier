@@ -1,9 +1,9 @@
 // Intérieurs : grande salle du donjon, église, taverne « À la Pomme d'Or ».
 // Les pièces sont construites loin du village (x = 250) ; on y entre par un fondu au noir.
 import * as THREE from 'three';
-import { Tex, metricBoxUV } from './textures.js?v=202611261218';
-import { makeNPC } from './npcs.js?v=202611261218';
-import { createHumanoid } from './humanoid.js?v=202611261218';
+import { Tex, metricBoxUV } from './textures.js?v=202611261343';
+import { makeNPC } from './npcs.js?v=202611261343';
+import { createHumanoid } from './humanoid.js?v=202611261343';
 
 export const ROOMS = {
   hall: {
@@ -17,6 +17,11 @@ export const ROOMS = {
   tavern: {
     name: 'la taverne', origin: { x: 250, z: 60 }, w: 12, d: 9, h: 4.2,
     door: { x: 4.6, z: 44, rot: -Math.PI / 2 },
+  },
+  // Chapitre V : la grande salle du comte (on n'y entre que par l'histoire)
+  court: {
+    name: 'la cour du comte', origin: { x: 250, z: 140 }, w: 14, d: 24, h: 9,
+    door: { x: 0, z: -28.5, rot: Math.PI }, locked: true,
   },
 };
 
@@ -249,6 +254,63 @@ export function createInteriors(scene, world) {
     R.light2 = { x: x + 1, y: 3.2, z: z + 1, color: 0xffb060, intensity: 6, distance: 12 };
   }
 
+  // ---------- Grande salle du comte ----------
+  {
+    const R = ROOMS.court;
+    room(R, M.stoneLight, M.stone);
+    const { x, z } = R.origin;
+    // Tapis rouge jusqu'au trône
+    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 20).rotateX(-Math.PI / 2), mat(0x7a1418, { roughness: 1 }));
+    carpet.position.set(x, 0.02, z + 0.5);
+    carpet.receiveShadow = true;
+    scene.add(carpet);
+    // Colonnes
+    for (let k = -8; k <= 8; k += 4) {
+      for (const sx of [-4.6, 4.6]) {
+        const c = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.48, R.h, 14), M.stoneLight);
+        c.position.set(x + sx, R.h / 2, z + k);
+        c.castShadow = c.receiveShadow = true;
+        scene.add(c);
+        world.circles.push({ x: x + sx, z: z + k, r: 0.5, top: 99 });
+      }
+    }
+    // Estrade, trône et dais
+    box(6, 0.3, 3, x, 0, z - 10.4, M.wood);
+    box(4, 0.3, 2, x, 0.3, z - 10.9, M.wood);
+    box(1.3, 0.7, 1.0, x, 0.6, z - 11.2, M.timber);
+    box(1.3, 2.4, 0.25, x, 0.6, z - 11.65, M.timber);
+    const dais = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.6), M.cloth);
+    dais.position.set(x, 5.2, z - 11.9);
+    scene.add(dais);
+    banner(x, 7.2, z - 11.85, 0, M.red);
+    // Bannières des seigneurs du comté, le long des murs
+    const colors = [0x22386e, 0x8a1f18, 0x2a5a2a, 0x6a2a6a, 0xb8902a, 0x22386e];
+    colors.forEach((c, i) => {
+      const side = i % 2 ? 1 : -1;
+      const m = mat(c, { side: THREE.DoubleSide });
+      banner(x + side * 6.9, 5.5, z - 7 + Math.floor(i / 2) * 6, -side * Math.PI / 2, m);
+    });
+    // Chandeliers sur pied
+    for (const [dx, dz] of [[-2.2, -9], [2.2, -9], [-2.2, -2], [2.2, -2], [-2.2, 5], [2.2, 5]]) {
+      const stand = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.12, 1.6, 8), mat(0x6a5020, { metalness: 0.7, roughness: 0.4 }));
+      stand.position.set(x + dx, 0.8, z + dz);
+      scene.add(stand);
+      candle(x + dx, 1.6, z + dz);
+    }
+    // Hautes fenêtres lumineuses
+    for (let k = -8; k <= 8; k += 5.3) {
+      for (const sx of [-1, 1]) {
+        const g = new THREE.Mesh(new THREE.PlaneGeometry(0.8, 2.6), new THREE.MeshStandardMaterial({ color: 0xffeacc, emissive: 0xffe0b0, emissiveIntensity: 1.2, side: THREE.DoubleSide }));
+        g.position.set(x + sx * 6.97, 6.2, z + k);
+        g.rotation.y = Math.PI / 2;
+        scene.add(g);
+      }
+    }
+    R.light = { x, y: 4, z: z - 8, color: 0xffd8a0, intensity: 30, distance: 30 };
+    R.light2 = { x, y: 6, z: z + 4, color: 0xffe8c8, intensity: 18, distance: 26 };
+    R.kneel = { x, z: z - 7.6 };
+  }
+
   // Enseigne de la taverne (dehors, au-dessus de la porte)
   {
     const c = document.createElement('canvas');
@@ -289,9 +351,11 @@ export function createInteriors(scene, world) {
     nearDoor(pos) {
       if (current) {
         const e = ROOMS[current].exit;
+        if (ROOMS[current].locked) return null;
         return Math.hypot(pos.x - e.x, pos.z - e.z) < 1.6 ? { id: current, exit: true } : null;
       }
       for (const [id, R] of Object.entries(ROOMS)) {
+        if (R.locked) continue;
         if (Math.hypot(pos.x - R.door.x, pos.z - R.door.z) < 1.8) return { id, exit: false };
       }
       return null;

@@ -2,10 +2,10 @@
 // Reprend les règles et l'interface du duel, avec une cible verrouillée
 // que l'on peut changer (Tab / 🎯).
 import * as THREE from 'three';
-import { Duel, setThreat } from './duel.js?v=202611261218';
-import { Fighter } from './combat.js?v=202611261218';
-import { animateWalk } from './humanoid.js?v=202611261218';
-import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261218';
+import { Duel, setThreat } from './duel.js?v=202611261343';
+import { Fighter } from './combat.js?v=202611261343';
+import { animateWalk } from './humanoid.js?v=202611261343';
+import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261343';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -277,6 +277,20 @@ export class Battle extends Duel {
       this.message(!def.alive ? 'Brigand vaincu !' : ev.kind === 'heavy' ? 'Coup lourd !' : 'Touché !', 700);
       if (!def.alive) { this.updateTuto(); this.lockNearest(); }
     }
+  }
+
+  /** Un allié frappe un ennemi (Godefroy ou Bertrand viennent aider). */
+  allyHit(entry, byName, damage = 10) {
+    if (!this.running || !entry.fighter.alive) return;
+    const f = entry.fighter;
+    if (f.isBlocking && Math.random() < 0.5) { playBlock(); return; }
+    f.takeHit(damage);
+    playHurt();
+    const at = entry.obj.position.clone();
+    at.y = 1.3;
+    this.burst(at, 10, 0xd8c8a8);
+    this.message(!f.alive ? `${byName.split(',')[0]} l'abat !` : `${byName.split(',')[0]} frappe !`, 800);
+    if (!f.alive) { this.updateTuto(); this.lockNearest(); }
   }
 
   checkEnd() {

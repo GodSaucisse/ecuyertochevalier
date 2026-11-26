@@ -1,33 +1,34 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js?v=202611261218';
-import { Player } from './player.js?v=202611261218';
-import { Input } from './input.js?v=202611261218';
-import { UI } from './ui.js?v=202611261218';
-import { createNPCs } from './npcs.js?v=202611261218';
-import { QuestManager } from './quests.js?v=202611261218';
-import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261218';
-import { createEnvironment } from './sky.js?v=202611261218';
-import { createPostFX } from './postfx.js?v=202611261218';
-import { createGrass } from './grass.js?v=202611261218';
-import { createParticles } from './particles.js?v=202611261218';
-import { Duel } from './duel.js?v=202611261218';
-import { Battle } from './battle.js?v=202611261218';
-import { loadSave, writeSave, clearSave } from './save.js?v=202611261218';
-import { Horse } from './horse.js?v=202611261218';
-import { createCourse } from './course.js?v=202611261218';
-import { createLife } from './life.js?v=202611261218';
-import { createChapter3 } from './chapter3.js?v=202611261218';
-import { createChapter4 } from './chapter4.js?v=202611261218';
-import { createInteriors, ROOMS } from './interiors.js?v=202611261218';
-import { Economy } from './economy.js?v=202611261218';
-import { TimeOfDay } from './timeofday.js?v=202611261218';
-import { STABLE_HORSE, HIDE } from './layout.js?v=202611261218';
-import { createSword } from './humanoid.js?v=202611261218';
-import { Music } from './music.js?v=202611261218';
-import { Ambience } from './ambience.js?v=202611261218';
-import { loadSettings, saveSettings } from './settings.js?v=202611261218';
-import { drawMap } from './map.js?v=202611261218';
+import { buildWorld } from './world.js?v=202611261343';
+import { Player } from './player.js?v=202611261343';
+import { Input } from './input.js?v=202611261343';
+import { UI } from './ui.js?v=202611261343';
+import { createNPCs } from './npcs.js?v=202611261343';
+import { QuestManager } from './quests.js?v=202611261343';
+import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261343';
+import { createEnvironment } from './sky.js?v=202611261343';
+import { createPostFX } from './postfx.js?v=202611261343';
+import { createGrass } from './grass.js?v=202611261343';
+import { createParticles } from './particles.js?v=202611261343';
+import { Duel } from './duel.js?v=202611261343';
+import { Battle } from './battle.js?v=202611261343';
+import { loadSave, writeSave, clearSave } from './save.js?v=202611261343';
+import { Horse } from './horse.js?v=202611261343';
+import { createCourse } from './course.js?v=202611261343';
+import { createLife } from './life.js?v=202611261343';
+import { createChapter3 } from './chapter3.js?v=202611261343';
+import { createChapter4 } from './chapter4.js?v=202611261343';
+import { createInteriors, ROOMS } from './interiors.js?v=202611261343';
+import { createChapter5 } from './chapter5.js?v=202611261343';
+import { Economy } from './economy.js?v=202611261343';
+import { TimeOfDay } from './timeofday.js?v=202611261343';
+import { STABLE_HORSE, HIDE } from './layout.js?v=202611261343';
+import { createSword } from './humanoid.js?v=202611261343';
+import { Music } from './music.js?v=202611261343';
+import { Ambience } from './ambience.js?v=202611261343';
+import { loadSettings, saveSettings } from './settings.js?v=202611261343';
+import { drawMap } from './map.js?v=202611261343';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -68,6 +69,8 @@ const life = createLife(scene, world);
 const ch3 = createChapter3(scene, world);
 const ch4 = createChapter4(scene, world);
 const interiors = createInteriors(scene, world);
+const npcs = createNPCs(scene, world);
+const ch5 = createChapter5(scene, world, { godefroy: npcs.godefroy, bertrand: npcs.bertrand, borgneH: ch4.borgneH, oldLordHorse: ch3.lordHorse });
 if (HIGH) world.sun.shadow.mapSize.set(4096, 4096);
 scene.environment = createEnvironment(renderer, world.sunDir);
 scene.environmentIntensity = 1.0;
@@ -81,8 +84,7 @@ const ui = new UI(isTouch);
 const input = new Input(renderer.domElement, isTouch);
 input.sens = settings.sens;
 const player = new Player(scene, world);
-const npcs = createNPCs(scene, world);
-npcs.list.push(...life.npcs, ch4.aymeric, ch4.anselme, ...interiors.npcs);
+npcs.list.push(...life.npcs, ch4.aymeric, ch4.anselme, ...interiors.npcs, ch5.count, ...ch5.nobles);
 ch3.setLord(npcs.godefroy);
 ch3.placeHome();
 const quests = new QuestManager({ ui, npcs, world });
@@ -224,6 +226,105 @@ quests.onFinalFight = () => {
   battle.start([{ name: AYMERIC, h: ch4.aymeric.h, sword, spawn: { x: a.x, z: a.z }, hp: 90, speed: 1.15, damageMul: 0.9 }], { title: 'Le traître', label: 'Ne le laisse pas s\'enfuir !' });
 };
 quests.onMorning = () => timeJump(8, null, 'Au petit matin…', () => ch4.arrest());
+
+// ---------- Chapitre V ----------
+quests.kneelSpot = new THREE.Vector3(ROOMS.court.kneel.x, 0, ROOMS.court.kneel.z);
+quests.onDeparture = () => ch5.prepareDeparture();
+const G = npcs.godefroy.name, BE = npcs.bertrand.name;
+const ch5Events = {
+  depart: () => { quests.goTo(26); ui.toast('En route pour la cour du comte !', 2500); },
+  wait: () => ui.toast('Sire Godefroy t\'attend. Ne traîne pas !', 2500),
+  ambush: () => {
+    if (quests.step !== 26) return;
+    if (horse.mounted) { horse.setMounted(false); player.dismount(horse); course.lance.visible = false; }
+    const foes = ch5.springAmbush();
+    ui.showDialog([
+      [BORGNE, 'Halte-là, Godefroy de Montclair ! Je t\'avais promis qu\'on se reverrait.'],
+      [G, 'Le Borgne… Ton espion croupit dans mon cachot. Rends-toi, et tu auras un procès.'],
+      [BORGNE, 'Un procès ? Je préfère ta bourse… et la tête de ton écuyer !'],
+      [G, 'Montclair ! À moi !'],
+    ], () => {
+      battle.onWin = () => {
+        ch5.endAmbush();
+        economy.earn(80, ui, 'la bourse du Borgne');
+        setTimeout(() => ui.showDialog([
+          [BORGNE, 'Assez… assez ! Je me rends…'],
+          [BE, 'Par saint Georges, petit ! Tu as mis le Borgne à genoux !'],
+          [G, 'Ligotez-le. Le comte le jugera. Et toi, écuyer… le comte voudra te voir.'],
+        ], () => timeJump(11, null, 'Le lendemain, à la cour du comte…', () => enterCourt())), 1500);
+      };
+      battle.onLose = (retry) => ui.showDialog([[G, 'Relève-toi, écuyer ! Pour Montclair !']], retry);
+      battle.start(foes, { title: 'Le piège du Borgne', label: 'Bats le Borgne et ses hommes !' });
+    });
+  },
+  targets: () => (battle.running ? battle.alive : []),
+  assist: (entry, name) => battle.allyHit(entry, name, 10),
+  helperFree: (name) => { if (battle.running) ui.toast(`${name.split(',')[0]} a vaincu son adversaire et vient t'aider !`, 2500); },
+  accoladeDone: () => {
+    ui.showDialog([
+      [COUNT, 'Au nom de Dieu, de saint Michel et de saint Georges, je te fais chevalier. Sois preux !'],
+      [COUNT, 'Relève-toi, chevalier de Montclair !'],
+    ], () => {
+      ch5.rise(player);
+      setTimeout(() => ui.showDialog([
+        [G, 'Voici ton manteau, aux couleurs de Montclair. Porte-le avec honneur… et voici cent deniers pour ton équipement.'],
+        [BE, 'Je savais que tu y arriverais. Enfin… je l\'espérais. Bienvenue parmi nous, Sire.'],
+      ], () => {
+        economy.give('manteau');
+        economy.earn(100, ui, 'cadeau de Sire Godefroy');
+        save(false);
+        showEnding();
+      }), 2200);
+    });
+  },
+};
+const COUNT = ch5.count.name;
+function enterCourt() {
+  if (horse.mounted) { horse.setMounted(false); player.dismount(horse); }
+  // Tonnerre rentre au château
+  horse.position.set(-11, 0, -34);
+  horse.object.rotation.y = Math.PI / 2;
+  horse.syncColliders();
+  interiors.enter('court', player);
+  tod.indoor = true;
+  ch5.enterCourt();
+  cam.yaw = player.object.rotation.y + Math.PI;
+  cam.pitch = 0.3;
+  cam.dist = 3.6;
+  quests.goTo(27);
+}
+function startCeremony() {
+  ch5.kneel(player);
+  ui.showDialog([
+    [COUNT, 'Approche, écuyer de Montclair. Sire Godefroy m\'a tout conté : les brigands de la forêt, le traître démasqué, et le Borgne enfin capturé.'],
+    [COUNT, 'Un tel courage mérite récompense. Mais d\'abord, un serment.'],
+  ], () => ui.showChoice(COUNT, 'Jures-tu de servir ton seigneur avec loyauté, de protéger les faibles, et de ne jamais tirer l\'épée sans juste cause ?', [
+    { label: 'Je le jure.', value: 'oui' },
+  ], () => ch5.accolade()));
+}
+function showEnding() {
+  const owned = Object.keys(economy.owned).filter((k) => k !== 'manteau').length;
+  $('ending-stats').innerHTML = `🪙 ${economy.money} deniers · ⚔️ ${owned} pièce${owned > 1 ? 's' : ''} d'équipement · 🛡 Chevalier de Montclair`;
+  $('ending').classList.remove('hidden');
+  ui.modalOpen = true;
+  if (document.pointerLockElement) document.exitPointerLock();
+}
+$('ending-continue').addEventListener('click', () => {
+  $('ending').classList.add('hidden');
+  ui.modalOpen = false;
+  $('fade').classList.add('on');
+  setTimeout(() => {
+    interiors.exit(player);
+    tod.indoor = false;
+    ch5.goHome();
+    ch3.placeHome();
+    tod.setTime(17);
+    quests.goTo(28);
+    cam.yaw = player.object.rotation.y + Math.PI;
+    $('fade').classList.remove('on');
+    relock();
+  }, 450);
+});
 
 // ---------- Sauvegarde ----------
 let savedTimer = null;
@@ -523,6 +624,8 @@ function frame() {
           else if (Math.abs(horse.speed) < 1.5) { horse.setMounted(false); player.dismount(horse); course.lance.visible = false; save(false); }
           else ui.toast('Ralentis pour descendre.', 1200);
         }
+      } else if (actions.interact && quests.step === 27 && ch5.nearKneel(player.position)) {
+        startCeremony();
       } else if (actions.interact && interiors.nearDoor(player.position)) {
         goThroughDoor(interiors.nearDoor(player.position));
       } else if (actions.interact && interiors.nearAltar(player.position)) {
@@ -538,7 +641,7 @@ function frame() {
       }
     }
 
-    const frozen = ui.dialogOpen && !f;
+    const frozen = (ui.dialogOpen && !f) || ch5.state.kneeling;
     if (f) {
       player.update(dtGame, ui.dialogOpen ? { x: 0, y: 0 } : input.move, false, cam.yaw, f.lockTarget);
       f.update(dtGame);
@@ -560,6 +663,7 @@ function frame() {
     }
     ch3.update(dtGame, player.position, ch3Events);
     ch4.update(dtGame, { position: player.position, mounted: horse.mounted }, ch4Events);
+    ch5.update(dtGame, { position: player.position, mounted: horse.mounted, h: player.h }, ch5Events);
     // Chapitre IV : arrivée dans la cachette
     if (quests.step === 20 && !ui.dialogOpen && Math.hypot(player.position.x - HIDE.x, player.position.z - HIDE.z) < 2.5) {
       if (horse.mounted) {
@@ -583,8 +687,9 @@ function frame() {
     // Invite "Parler" / "Monter"
     const near = ui.dialogOpen || f ? null : nearestNPC();
     const key = isTouch ? '💬' : '[E]';
-    if (ui.dialogOpen || f) ui.setPrompt(null);
+    if (ui.dialogOpen || f || ch5.state.kneeling || ch5.state.mode === 'accolade') ui.setPrompt(null);
     else if (horse.mounted) ui.setPrompt(near ? `${key} Parler à ${near.name}` : (Math.abs(horse.speed) < 1.5 ? `${key} Descendre de cheval` : null));
+    else if (quests.step === 27 && ch5.nearKneel(player.position)) ui.setPrompt(`${key} T'agenouiller devant le comte`);
     else if (interiors.nearDoor(player.position)) {
       const d = interiors.nearDoor(player.position);
       ui.setPrompt(d.exit ? `${key} Sortir` : `${key} Entrer dans ${ROOMS[d.id].name}`);
@@ -677,6 +782,8 @@ function restoreWorld(data) {
   }
   if (Object.keys(economy.owned).length) player.applyEquipment(economy.owned, economy.stats());
   if (step === 23 && tod.night < 0.5) { tod.setTime(22.5); tod.lockWeather('brume'); }
+  if (step === 26) step = 25; // la chevauchée recommence devant la porte
+  ch5.placeForStep(step);
   quests.restore({ ...data, step });
   if (data.horse) {
     horse.position.set(data.horse.x, 0, data.horse.z);
@@ -702,6 +809,7 @@ function restoreWorld(data) {
     player.position.set(data.pos[0], 0, data.pos[1]);
     player.object.rotation.y = data.rot || 0;
   }
+  if (step === 27) enterCourt(); // reprise dans la grande salle du comte
 }
 
 const existing = loadSave();
@@ -723,4 +831,4 @@ $('start').addEventListener('click', () => {
 });
 
 // Accès pour le débogage depuis la console du navigateur
-window.game = { player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, tod, life, music, economy, interiors, openPause, closePause, goThroughDoor };
+window.game = { player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, ch5, tod, life, music, economy, interiors, openPause, closePause, goThroughDoor };
