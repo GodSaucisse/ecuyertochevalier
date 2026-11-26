@@ -1,5 +1,5 @@
 // Ambiance sonore : vent, oiseaux, cloche de l'église.
-import { audio, atDistance, playBell } from './audio.js?v=202611261111';
+import { audio, atDistance, playBell } from './audio.js?v=202611261121';
 
 const CHURCH_BELL = { x: -20, z: -1.8 };
 

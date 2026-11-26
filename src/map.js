@@ -1,6 +1,6 @@
 // Carte du monde, dessinée vue du dessus (le nord, avec le château, en haut).
-import { GATES, LISTS, ROAD, AMBUSH } from './layout.js?v=202611261111';
-import { WORLD_RADIUS } from './world.js?v=202611261111';
+import { GATES, LISTS, ROAD, AMBUSH } from './layout.js?v=202611261121';
+import { WORLD_RADIUS } from './world.js?v=202611261121';
 
 export function drawMap(canvas, { world, player, horse, target, step }) {
   const ctx = canvas.getContext('2d');

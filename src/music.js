@@ -1,7 +1,7 @@
 // Musique médiévale composée en direct par le jeu (aucun fichier audio).
-// Mode dorien de ré, flûte à bec seule (plus rapide pendant les combats).
+// Mode dorien de ré : luth en arpèges et flûte à bec (plus rapides pendant les combats).
 // La mélodie varie à chaque reprise.
-import { audio } from './audio.js?v=202611261111';
+import { audio } from './audio.js?v=202611261121';
 
 const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const DORIAN = [0, 2, 3, 5, 7, 9, 10];
@@ -126,7 +126,12 @@ export class Music {
     // Toutes les 4 reprises, une respiration : seulement luth et bourdon
     const breathe = !combat && this.loop % 4 === 3;
 
-    // Seulement la flûte (le luth, le bourdon et les percussions ont été retirés à la demande du joueur)
+    // Luth : arpège (les percussions et le bourdon ont été retirés à la demande du joueur)
+    const pattern = combat ? [0, 4, 7, 0, 4, 7] : [0, 4, 7, 2, 4, 7, 2, 4];
+    const lutePitch = degree(root + pattern[inBar], 50);
+    if (!breathe || inBar % 2 === 0) this.pluck(midiToFreq(lutePitch), t, inBar === 0 ? 0.2 : 0.13);
+
+    // Flûte : mélodie
     if (!breathe) {
       const phrase = this.phrases[Math.floor(bar / 2) % 4];
       const posInPhrase = (bar % 2) * barLen + inBar;
