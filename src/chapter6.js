@@ -2,11 +2,11 @@
 // Le voyage, le vol de la lettre du comte, la poursuite du coupe-bourse, l'audience du roi Louis VI,
 // la taverne du Grand Pont, l'embuscade de nuit et le rapport à l'abbé Suger.
 import * as THREE from 'three';
-import { makeNPC } from './npcs.js?v=202611261748';
-import { createHumanoid, createSword, createAxe, createClub, animateWalk } from './humanoid.js?v=202611261748';
-import { PARIS, SPOTS, inParis } from './paris.js?v=202611261748';
-import { ROOMS } from './interiors.js?v=202611261748';
-import { playSuccess, playVictory } from './audio.js?v=202611261748';
+import { makeNPC } from './npcs.js?v=202611261852';
+import { createHumanoid, createSword, createAxe, createClub, animateWalk } from './humanoid.js?v=202611261852';
+import { PARIS, SPOTS, inParis } from './paris.js?v=202611261852';
+import { ROOMS } from './interiors.js?v=202611261852';
+import { playSuccess, playVictory } from './audio.js?v=202611261852';
 
 const NARR = '';
 // Chemin de fuite du voleur (coordonnées locales de Paris)
@@ -163,7 +163,7 @@ export class Chapter6 {
 
   get travelAllowed() {
     const s = this.step;
-    return s >= 29 && ![30, 31, 34, 35].includes(s);
+    return s >= 29 && ![30, 31, 34, 35, 38, 39, 40, 41].includes(s);
   }
 
   // ================= Voyages =================

@@ -1,9 +1,9 @@
 // Intérieurs : grande salle du donjon, église, taverne « À la Pomme d'Or ».
 // Les pièces sont construites loin du village (x = 250) ; on y entre par un fondu au noir.
 import * as THREE from 'three';
-import { Tex, metricBoxUV } from './textures.js?v=202611261748';
-import { makeNPC } from './npcs.js?v=202611261748';
-import { createHumanoid } from './humanoid.js?v=202611261748';
+import { Tex, metricBoxUV } from './textures.js?v=202611261852';
+import { makeNPC } from './npcs.js?v=202611261852';
+import { createHumanoid } from './humanoid.js?v=202611261852';
 
 export const ROOMS = {
   hall: {

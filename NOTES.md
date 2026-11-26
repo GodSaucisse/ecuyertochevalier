@@ -109,6 +109,12 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - quests.ext = ch6 : refresh / target / talk pour les étapes ≥ 28.
 - Histoire vraie : en 1127, Étienne de Garlande, sénéchal et chancelier, est chassé de la cour (rôle de la reine Adélaïde) ; Louis VI assiégera son château de Livry en 1128. Suger est abbé de Saint-Denis depuis 1122.
 
+## Chapitre VII (chapter7.js) et la plaine nord (north.js)
+- north.js : route de Saint-Denis (x ≈ 0, de z = -66 à -320, coordonnées locales de Paris), hameau de La Chapelle (z ≈ -135), butte de Montmartre (55, -205) avec vignes et fourrés, arbre abattu en (0, -194), abbaye de Saint-Denis (porte z = -312). Construite avec Paris (ensureParis).
+- La porte nord de la place de Grève (z ≈ -68) est fermée avant l'étape 38 (paris.setNorthGate).
+- Étapes : 37 parler à Suger au palais → saut à 7 h, place de Grève → 38 escorter le chariot (mule + chariot, attend si le joueur est à plus de 16 m) → Colin prévient si on l'a libéré (flags.colin === 'free' : 3 ennemis au lieu de 4) → 39 combat contre Renaud le Vert → 40 reprise de l'escorte → 41 parler à Suger devant l'abbaye → 42 libre (« chapitre VIII, Le siège de Livry, bientôt »).
+- Reprises : 39 → 38 (le joueur revient place de Grève). quests.ext réunit ch6 et ch7.
+
 ## Avancement
 - [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine, duel d'entraînement.
 - [x] Combat à la For Honor
@@ -129,4 +135,5 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Finitions : bruits de pas, caméra qui évite les murs dehors, tutoriel
 - [x] Blason et création du héros, combat à cheval, tournoi de la Saint-Martin
 - [x] Chapitre VI à Paris « La Cité du roi »
-- [ ] Chapitre VII « La route de Saint-Denis » (escorte de Suger, embuscade à Montmartre), puis le siège de Livry ; plus tard la Terre sainte
+- [x] Chapitre VII « La route de Saint-Denis »
+- [ ] Chapitre VIII « Le siège de Livry » (1128) ; plus tard la Terre sainte

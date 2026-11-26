@@ -1,6 +1,6 @@
 // L'arc : visée par-dessus l'épaule, flèches soumises à la pesanteur, cibles notées et gibier.
 import * as THREE from 'three';
-import { playSwing, playHit } from './audio.js?v=202611261748';
+import { playSwing, playHit } from './audio.js?v=202611261852';
 
 const SPEED = 42;      // vitesse d'une flèche (m/s)
 const GRAVITY = 9.8;

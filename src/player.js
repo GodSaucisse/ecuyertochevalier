@@ -1,7 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261748';
-import { Fighter } from './combat.js?v=202611261748';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261852';
+import { Fighter } from './combat.js?v=202611261852';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;

@@ -2,10 +2,10 @@
 // le palais du roi à l'ouest, la cathédrale à l'est, les Châtelets et les rives.
 // La ville est construite loin de Montclair (origine PARIS) ; on y voyage par un fondu au noir.
 import * as THREE from 'three';
-import { Tex, metricBoxUV } from './textures.js?v=202611261748';
-import { makeNPC } from './npcs.js?v=202611261748';
-import { createHumanoid, animateWalk } from './humanoid.js?v=202611261748';
-import { ROOMS } from './interiors.js?v=202611261748';
+import { Tex, metricBoxUV } from './textures.js?v=202611261852';
+import { makeNPC } from './npcs.js?v=202611261852';
+import { createHumanoid, animateWalk } from './humanoid.js?v=202611261852';
+import { ROOMS } from './interiors.js?v=202611261852';
 
 /** Origine de Paris dans le monde du jeu. */
 export const PARIS = { x: -600, z: 0 };
@@ -28,7 +28,7 @@ export const SPOTS = {
 };
 
 // ---------- Fusion des géométries par matériau (beaucoup moins d'objets à dessiner) ----------
-class Batch {
+export class Batch {
   constructor() { this.parts = new Map(); this.m = new THREE.Matrix4(); this.q = new THREE.Quaternion(); this.e = new THREE.Euler(); }
   add(material, geo, matrix) {
     let g = geo.index ? geo.toNonIndexed() : geo;
@@ -404,7 +404,14 @@ export function buildParis(scene, world, kit) {
   row('x', -36, -12, NB - 14, 's', 6, { shops: true });
   row('x', 12, 40, NB - 14, 's', 6, { shops: true });
   filler(-36, -12, NB - 26, NB - 17, 7); filler(12, 40, NB - 26, NB - 17, 7);
-  collide(-40, -36, NB - 26, NB); collide(40, 44, NB - 26, NB); collide(-12, 12, NB - 30, NB - 26);
+  collide(-40, -36, NB - 26, NB); collide(40, 44, NB - 26, NB);
+  // Barrière de la route de Saint-Denis (au nord de la place de Grève) : la porte s'ouvre au chapitre VII
+  collide(-12, -3, NB - 30, NB - 26); collide(3, 12, NB - 30, NB - 26);
+  const northGate = collide(-3, 3, NB - 30, NB - 26);
+  for (const x of [-11, -7, 7, 11]) B.box(M.timber, 0.3, 3, 0.3, L(x), 0, Lz(NB - 28));
+  B.box(M.timber, 9, 0.25, 0.2, L(-7.5), 1.0, Lz(NB - 28)); B.box(M.timber, 9, 0.25, 0.2, L(7.5), 1.0, Lz(NB - 28));
+  B.box(M.timber, 9, 0.25, 0.2, L(-7.5), 2.0, Lz(NB - 28)); B.box(M.timber, 9, 0.25, 0.2, L(7.5), 2.0, Lz(NB - 28));
+  for (const x of [-3.3, 3.3]) B.box(M.stone, 0.7, 3.6, 0.7, L(x), 0, Lz(NB - 28));
   ground(M.dirt, -12, 12, NB - 26, NB - 11, 0.012);
   B.box(M.stoneL, 10, 12, 20, L(52), 0, Lz(NB - 30));
   B.box(M.stoneL, 5, 24, 5, L(48), 0, Lz(NB - 22));
@@ -413,7 +420,7 @@ export function buildParis(scene, world, kit) {
   // ================= Arrière-plan : collines, abbaye Sainte-Geneviève, Montmartre =================
   const hill = (x, z, r, h, m = M.hill) => B.geo(m, new THREE.SphereGeometry(r, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, h / r, 1), L(x), 0, Lz(z));
   hill(-30, 190, 70, 26);   // montagne Sainte-Geneviève
-  hill(20, -230, 90, 45);   // Montmartre
+  // (Montmartre est construite dans north.js)
   hill(-200, -60, 80, 18); hill(200, 40, 90, 22); hill(150, 200, 80, 20, M.far); hill(-200, 200, 90, 24, M.far);
   B.box(M.stoneL, 14, 10, 24, L(-30), 22, Lz(175));                // abbaye sur la colline
   B.box(M.stoneL, 5, 22, 5, L(-24), 22, Lz(165));
@@ -478,7 +485,7 @@ export function buildParis(scene, world, kit) {
   }
 
   // Limites extérieures de l'île (rien après les parapets) et de la ville
-  collide(-150, 150, 108, 112); collide(-150, 150, -82, -78);
+  collide(-150, 150, 108, 112); collide(-150, -12, -73, -70); collide(12, 150, -73, -70);
 
   B.build(scene);
 
@@ -740,5 +747,23 @@ export function buildParis(scene, world, kit) {
     }
   }
 
-  return { npcs, guards, royal, tav, update, SPOTS, L, Lz };
+  // Battants de la porte nord (ouverts à partir du chapitre VII)
+  const gateDoors = [];
+  for (const s of [-1, 1]) {
+    const d = new THREE.Mesh(metricBoxUV(new THREE.BoxGeometry(2.9, 2.6, 0.15), 2.9, 2.6, 0.15), M.door);
+    d.position.set(L(s * 1.45), 1.3, Lz(NB - 28));
+    d.castShadow = true;
+    const pivot = new THREE.Group();
+    pivot.position.set(L(s * 2.95), 0, Lz(NB - 28));
+    d.position.set(-s * 1.45, 1.3, 0);
+    pivot.add(d);
+    scene.add(pivot);
+    gateDoors.push({ pivot, s });
+  }
+  function setNorthGate(open) {
+    northGate.top = open ? -99 : 99;
+    for (const g of gateDoors) g.pivot.rotation.y = open ? -g.s * 1.45 : 0;
+  }
+
+  return { npcs, guards, royal, tav, update, SPOTS, L, Lz, setNorthGate, M };
 }

@@ -1,9 +1,9 @@
 // Combat à cheval : coups d'épée depuis la selle, mannequins d'entraînement,
 // et chevaliers ennemis montés (mêlée du tournoi).
 import * as THREE from 'three';
-import { createHumanoid, createSword } from './humanoid.js?v=202611261748';
-import { Horse } from './horse.js?v=202611261748';
-import { playSwing, playHit, playBlock, playHurt } from './audio.js?v=202611261748';
+import { createHumanoid, createSword } from './humanoid.js?v=202611261852';
+import { Horse } from './horse.js?v=202611261852';
+import { playSwing, playHit, playBlock, playHurt } from './audio.js?v=202611261852';
 
 const REACH = 3.1;
 const SWING = { light: { dur: 0.5, strike: 0.2, dmg: 10 }, heavy: { dur: 0.85, strike: 0.42, dmg: 19 } };

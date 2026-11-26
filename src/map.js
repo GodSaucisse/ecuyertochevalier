@@ -1,6 +1,6 @@
 // Carte du monde, dessinée vue du dessus (le nord, avec le château, en haut).
-import { GATES, LISTS, ROAD, AMBUSH } from './layout.js?v=202611261748';
-import { WORLD_RADIUS } from './world.js?v=202611261748';
+import { GATES, LISTS, ROAD, AMBUSH } from './layout.js?v=202611261852';
+import { WORLD_RADIUS } from './world.js?v=202611261852';
 
 export function drawMap(canvas, { world, player, horse, target, step }) {
   const ctx = canvas.getContext('2d');
@@ -120,9 +120,11 @@ function star(ctx, x, y, r1, r2) {
 export function drawParisMap(canvas, { origin, player, target }) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const R = 82;
+  const lz = player.position.z - origin.z;
+  const far = lz < -78;                 // sur la route de Saint-Denis : plan plus large, centré sur le joueur
+  const R = far ? 120 : 82;
   const s = Math.min(W, H) / (2 * R);
-  const cz = -8; // centre vertical du plan (un peu au nord pour voir les deux rives)
+  const cz = far ? Math.max(-250, lz) : -8;
   const X = (x) => W / 2 + (x - origin.x) * s;
   const Y = (z) => H / 2 + (z - origin.z - cz) * s;
   const rect = (x0, x1, z0, z1, color) => { ctx.fillStyle = color; ctx.fillRect(X(origin.x + x0), Y(origin.z + z0), (x1 - x0) * s, (z1 - z0) * s); };
@@ -169,6 +171,20 @@ export function drawParisMap(canvas, { origin, player, target }) {
   label('Rive droite', 50, -60);
   label('Rive gauche', -40, 66);
   label('N', 70, -78);
+  // Route de Saint-Denis, Montmartre, l'abbaye
+  rect(-3.5, 3.5, -330, -70, 'rgba(140, 105, 60, 0.7)');
+  ctx.fillStyle = 'rgba(110, 120, 70, 0.6)';
+  ctx.beginPath(); ctx.arc(X(origin.x + 55), Y(origin.z - 205), 44 * s, 0, Math.PI * 2); ctx.fill();
+  rect(6, 16, -216, -176, 'rgba(80, 110, 50, 0.6)');
+  rect(-36, 36, -356, -312, 'rgba(110, 110, 120, 0.35)');
+  rect(-7, 7, -351, -318, 'rgba(150, 150, 160, 0.95)');
+  rect(-14, 15, -147, -124, block);
+  ctx.fillStyle = '#3a2a18';
+  ctx.font = `bold ${Math.round(W / 38)}px Georgia, serif`;
+  label('Montmartre', 55, -205);
+  label('Abbaye de Saint-Denis', 0, -362);
+  label('La Chapelle', -28, -135);
+  label('Route de Saint-Denis', -26, -100);
   if (target) {
     ctx.fillStyle = '#e8b030';
     ctx.strokeStyle = '#5a3a10';
