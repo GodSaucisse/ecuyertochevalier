@@ -41,6 +41,8 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `ambience.js` : vent, oiseaux, cloche de l'église. Sons selon la distance : `atDistance()` dans audio.js.
   - `settings.js` : réglages (volumes, sensibilité, qualité). `map.js` : carte du monde (menu pause).
   - `timeofday.js` : jour/nuit (1 h de jeu = 2 min), soleil/lune, couleurs du ciel, nuages, étoiles, torches, fenêtres éclairées, météo (clair, nuageux, brume, pluie). `lockWeather()` pour imposer une météo pendant l'histoire.
+  - `economy.js` : deniers, équipement (casque, écu, cotte de mailles, épée d'acier) et boutique de Gautier. `Player.applyEquipment()` change l'apparence et les stats (defenseMul, blockCostMul, damageMul).
+  - `interiors.js` : grande salle du donjon (Hersende), église (autel : « Prier »), taverne « À la Pomme d'Or » (Raoul, deux clients). Pièces construites à x = 250, entrée/sortie par fondu ; la caméra reste entre les murs.
   - `chapter4.js` : croix de pierre, buissons, Aymeric l'intendant (le traître), père Anselme, le Borgne, lanterne, rencontre nocturne et filature.
 
 ## Combat (version simple, demandée par le créateur)
@@ -66,6 +68,12 @@ Chapitre IV « Le traître » : 18 Godefroy confie l'enquête → 19 trois témo
 (Une sauvegarde aux étapes 21-22 reprend à l'étape 20.)
 Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 
+## Deniers
+- Gains : quintaine 10, duel de Bertrand 25, parcours 15, joute 35, embuscade 40, traître 60, revanche contre Bertrand 15 (à volonté, étape 5 ou ≥ 11).
+- Prix : casque 40, écu 60, cotte de mailles 120, épée d'acier 80 (offerte par Godefroy au chapitre III).
+- Les anciennes sauvegardes sans bourse reçoivent des deniers selon leur étape.
+- Dialogues à choix : `ui.showChoice(nom, texte, options, rappel)` (touches 1/2/3 ou clic).
+
 ## Cheval
 - Ordinateur : Z/↑ avancer (trot), Maj galop, Q/D tourner, S freiner/reculer, E monter/descendre (à l'arrêt).
 - Mobile : joystick (poussé à fond = galop), 💬 monter/descendre.
@@ -81,9 +89,10 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Menu pause, réglages, carte
 - [x] Jour/nuit et météo
 - [x] Chapitre IV : enquête, filature, traître démasqué
+- [x] Deniers et équipement (boutique de Gautier)
+- [x] Intérieurs : grande salle, église, taverne
 - [x] Graphismes « For Honor » : lumière, matériaux, armures
 - [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
 - [ ] Caméra qui évite de traverser les murs
-- [ ] Intérieurs des bâtiments
 - [ ] Chapitre V : la route de la Pentecôte (le Borgne attend), puis l'adoubement à la cour du comte
 - [ ] Adoubement (fin du jeu)

@@ -1,7 +1,7 @@
 // Tonnerre, le cheval : modèle articulé, allures (pas, trot, galop) et conduite.
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261206';
-import { playHoof } from './audio.js?v=202611261206';
+import { Tex } from './textures.js?v=202611261218';
+import { playHoof } from './audio.js?v=202611261218';
 
 const SPEEDS = { walk: 2.4, trot: 5.5, gallop: 11.5 };
 const RADIUS = 0.85;

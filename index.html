@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>D'Écuyer à Chevalier</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=202611261206">
+  <link rel="stylesheet" href="style.css?v=202611261218">
   <script type="importmap">
     { "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }
   </script>
@@ -47,6 +47,7 @@
     <div id="chapter" class="hidden"><div id="chapter-title"></div><div id="chapter-sub"></div></div>
     <div id="saved" class="hidden">💾 Partie sauvegardée</div>
     <div id="clock"></div>
+    <div id="purse">🪙 0</div>
     <div id="stealth" class="hidden"><div id="stealth-label">👁 Discrétion</div><div class="bar"><div id="stealth-fill" class="fill"></div></div></div>
     <button id="btn-pause" title="Pause (Échap)">⏸</button>
     <button id="btn-map" title="Carte (M)">🗺️</button>
@@ -56,6 +57,19 @@
       <div id="dialog-next"></div>
     </div>
   </div>
+
+  <!-- Boutique du forgeron -->
+  <div id="shop" class="hidden">
+    <div class="panneau menu">
+      <h2>La forge de Gautier</h2>
+      <div id="shop-money"></div>
+      <div id="shop-list"></div>
+      <div class="boutons"><button id="shop-close">Fermer</button></div>
+    </div>
+  </div>
+
+  <!-- Fondu pour passer une porte -->
+  <div id="fade"></div>
 
   <!-- Menu pause -->
   <div id="pause" class="hidden">
@@ -148,6 +162,6 @@
     </div>
   </div>
 
-  <script type="module" src="src/main.js?v=202611261206"></script>
+  <script type="module" src="src/main.js?v=202611261218"></script>
 </body>
 </html>

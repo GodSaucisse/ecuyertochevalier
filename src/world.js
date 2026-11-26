@@ -1,8 +1,8 @@
 // Le monde : terrain, château de Montclair, village, église, terrain d'entraînement, forêt.
 import * as THREE from 'three';
-import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611261206';
-import { createSky, SKY } from './sky.js?v=202611261206';
-import { onCourse } from './layout.js?v=202611261206';
+import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611261218';
+import { createSky, SKY } from './sky.js?v=202611261218';
+import { onCourse } from './layout.js?v=202611261218';
 
 // Générateur aléatoire "à graine" : le monde est identique à chaque partie.
 function mulberry32(seed) {
@@ -24,6 +24,7 @@ export function buildWorld(scene) {
   const circles = []; // obstacles ronds { x, z, r, top }
   const animated = []; // objets à animer chaque image
   const bare = [];     // zones sans herbe (chemins, cours…)
+  const indoor = [];   // pièces intérieures (hors des limites du monde)
 
   const mat = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.9, ...extra });
   /** Matériau texturé. Les textures sont prévues pour des coordonnées en mètres. */
@@ -662,7 +663,7 @@ export function buildWorld(scene) {
       }
     }
     const dist = Math.hypot(pos.x, pos.z);
-    if (dist > WORLD_RADIUS) {
+    if (dist > WORLD_RADIUS && !indoor.some((b) => pos.x > b.minX && pos.x < b.maxX && pos.z > b.minZ && pos.z < b.maxZ)) {
       pos.x *= WORLD_RADIUS / dist;
       pos.z *= WORLD_RADIUS / dist;
     }
@@ -699,5 +700,5 @@ export function buildWorld(scene) {
   function addBare(rect) { bare.push(rect); }
   function addBareFn(fn) { bareFns.push(fn); }
 
-  return { resolve, update, isBare, addBare, addBareFn, bare, quintain, circles, boxes, sun, sunDir, sunOffset, hemi, sky, windowMat: M.dark };
+  return { resolve, update, isBare, addBare, addBareFn, bare, quintain, circles, boxes, sun, sunDir, sunOffset, hemi, sky, windowMat: M.dark, indoor };
 }

@@ -1,31 +1,33 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js?v=202611261206';
-import { Player } from './player.js?v=202611261206';
-import { Input } from './input.js?v=202611261206';
-import { UI } from './ui.js?v=202611261206';
-import { createNPCs } from './npcs.js?v=202611261206';
-import { QuestManager } from './quests.js?v=202611261206';
-import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261206';
-import { createEnvironment } from './sky.js?v=202611261206';
-import { createPostFX } from './postfx.js?v=202611261206';
-import { createGrass } from './grass.js?v=202611261206';
-import { createParticles } from './particles.js?v=202611261206';
-import { Duel } from './duel.js?v=202611261206';
-import { Battle } from './battle.js?v=202611261206';
-import { loadSave, writeSave, clearSave } from './save.js?v=202611261206';
-import { Horse } from './horse.js?v=202611261206';
-import { createCourse } from './course.js?v=202611261206';
-import { createLife } from './life.js?v=202611261206';
-import { createChapter3 } from './chapter3.js?v=202611261206';
-import { createChapter4 } from './chapter4.js?v=202611261206';
-import { TimeOfDay } from './timeofday.js?v=202611261206';
-import { STABLE_HORSE, HIDE } from './layout.js?v=202611261206';
-import { createSword } from './humanoid.js?v=202611261206';
-import { Music } from './music.js?v=202611261206';
-import { Ambience } from './ambience.js?v=202611261206';
-import { loadSettings, saveSettings } from './settings.js?v=202611261206';
-import { drawMap } from './map.js?v=202611261206';
+import { buildWorld } from './world.js?v=202611261218';
+import { Player } from './player.js?v=202611261218';
+import { Input } from './input.js?v=202611261218';
+import { UI } from './ui.js?v=202611261218';
+import { createNPCs } from './npcs.js?v=202611261218';
+import { QuestManager } from './quests.js?v=202611261218';
+import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261218';
+import { createEnvironment } from './sky.js?v=202611261218';
+import { createPostFX } from './postfx.js?v=202611261218';
+import { createGrass } from './grass.js?v=202611261218';
+import { createParticles } from './particles.js?v=202611261218';
+import { Duel } from './duel.js?v=202611261218';
+import { Battle } from './battle.js?v=202611261218';
+import { loadSave, writeSave, clearSave } from './save.js?v=202611261218';
+import { Horse } from './horse.js?v=202611261218';
+import { createCourse } from './course.js?v=202611261218';
+import { createLife } from './life.js?v=202611261218';
+import { createChapter3 } from './chapter3.js?v=202611261218';
+import { createChapter4 } from './chapter4.js?v=202611261218';
+import { createInteriors, ROOMS } from './interiors.js?v=202611261218';
+import { Economy } from './economy.js?v=202611261218';
+import { TimeOfDay } from './timeofday.js?v=202611261218';
+import { STABLE_HORSE, HIDE } from './layout.js?v=202611261218';
+import { createSword } from './humanoid.js?v=202611261218';
+import { Music } from './music.js?v=202611261218';
+import { Ambience } from './ambience.js?v=202611261218';
+import { loadSettings, saveSettings } from './settings.js?v=202611261218';
+import { drawMap } from './map.js?v=202611261218';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -65,6 +67,7 @@ horse.parts.root.add(course.lance);
 const life = createLife(scene, world);
 const ch3 = createChapter3(scene, world);
 const ch4 = createChapter4(scene, world);
+const interiors = createInteriors(scene, world);
 if (HIGH) world.sun.shadow.mapSize.set(4096, 4096);
 scene.environment = createEnvironment(renderer, world.sunDir);
 scene.environmentIntensity = 1.0;
@@ -79,13 +82,26 @@ const input = new Input(renderer.domElement, isTouch);
 input.sens = settings.sens;
 const player = new Player(scene, world);
 const npcs = createNPCs(scene, world);
-npcs.list.push(...life.npcs, ch4.aymeric, ch4.anselme);
+npcs.list.push(...life.npcs, ch4.aymeric, ch4.anselme, ...interiors.npcs);
 ch3.setLord(npcs.godefroy);
 ch3.placeHome();
 const quests = new QuestManager({ ui, npcs, world });
 quests.horse = horse;
 quests.course = course;
 quests.onChapter = (title, subtitle) => showChapter(title, subtitle);
+
+// ---------- Deniers et équipement ----------
+const economy = new Economy();
+economy.onChange = () => player.applyEquipment(economy.owned, economy.stats());
+economy.onBuy = (id) => { ui.toast('Équipement acheté et porté !', 2200); save(false); };
+quests.onReward = (n, reason) => { economy.earn(n, ui, reason); };
+quests.onPay = (n) => { if (economy.money < n) return false; economy.money -= n; economy.updateHUD(); return true; };
+quests.onShop = () => economy.openShop(ui, () => { relock(); save(false); });
+ui.onModalClosed = () => relock();
+function relock() {
+  if (isTouch || paused) return;
+  try { const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) { /* rien */ }
+}
 
 const music = new Music();
 const ambience = new Ambience();
@@ -97,7 +113,16 @@ const duel = new Duel({
   onWin: () => quests.onDuelWon(),
   onLose: (retry) => quests.onDuelLost(retry),
 });
-quests.onStartDuel = () => duel.start(0);
+quests.onStartDuel = () => {
+  duel.onWin = () => quests.onDuelWon();
+  duel.onLose = (retry) => quests.onDuelLost(retry);
+  duel.start(0);
+};
+quests.onRematch = () => {
+  duel.onWin = () => { economy.earn(15, ui, 'revanche gagnée'); ui.showDialog([[npcs.bertrand.name, 'Joli ! Tiens, tes deniers. Tu les as mérités.']]); save(false); };
+  duel.onLose = (retry) => { ui.showDialog([[npcs.bertrand.name, 'Ha ! Pas aujourd\'hui, écuyer. Reviens quand tu veux.']]); duel.end(); };
+  duel.start(3);
+};
 quests.duelRunning = () => duel.running;
 
 const battle = new Battle({ scene, camera, player, world, ui, isTouch });
@@ -105,6 +130,7 @@ function ambushCallbacks() {
   battle.onWin = () => {
     ch3.endSideFight(true);
     setTimeout(() => { ch3.clearSideFight(); }, 2500);
+    economy.earn(40, ui, 'bourses des brigands');
     quests.goTo(15);
     setTimeout(() => quests.afterAmbushDialog(), 1200);
   };
@@ -115,7 +141,7 @@ function ambushCallbacks() {
 const fight = () => (duel.running ? duel : battle.running ? battle : null);
 
 // Chapitre III : événements de l'histoire
-quests.onSwordGiven = () => player.setSword(createSword(false));
+quests.onSwordGiven = () => economy.give('epee');
 quests.onEscort = () => startEscort();
 quests.onReturn = () => ch3.beginReturn();
 function startEscort() {
@@ -204,7 +230,8 @@ let savedTimer = null;
 function save(showIndicator = true) {
   const ok = writeSave({
     ...quests.serialize(),
-    pos: [player.position.x, player.position.z],
+    pos: interiors.current ? [ROOMS[interiors.current].door.x, ROOMS[interiors.current].door.z] : [player.position.x, player.position.z],
+    eco: economy.serialize(),
     horse: { x: horse.position.x, z: horse.position.z, rot: horse.heading, mounted: horse.mounted },
     rot: player.object.rotation.y,
     hour: tod.hour,
@@ -258,7 +285,8 @@ function updateCamera(dt, look) {
   } else {
     cam.yaw -= look.dx * 0.0025;
     cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.0025, -0.25, 1.25);
-    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom * 0.005, 2.5, 12);
+    cam.dist = THREE.MathUtils.clamp(cam.dist + look.zoom * 0.005, 2.2, interiors.current ? 3.2 : 12);
+    if (interiors.current) cam.pitch = Math.max(cam.pitch, 0.22); // regarder par-dessus la tête dans les pièces
   }
 
   const desired = player.position.clone().add(new THREE.Vector3(0, horse.mounted ? 1.7 : 1.55, 0));
@@ -280,6 +308,14 @@ function updateCamera(dt, look) {
     camera.position.add(shakeOffset);
   }
   if (camera.position.y < 0.3) camera.position.y = 0.3;
+  // À l'intérieur, la caméra reste entre les murs
+  const room = interiors.room;
+  if (room) {
+    const b = room.bounds, m = 0.35;
+    camera.position.x = THREE.MathUtils.clamp(camera.position.x, b.minX + m, b.maxX - m);
+    camera.position.z = THREE.MathUtils.clamp(camera.position.z, b.minZ + m, b.maxZ - m);
+    camera.position.y = THREE.MathUtils.clamp(camera.position.y, 0.5, b.h - 0.4);
+  }
   camera.lookAt(camTarget.x + rx, camTarget.y, camTarget.z + rz);
 }
 
@@ -363,7 +399,10 @@ function selectTab(tab) {
 function renderMap() {
   world._gateIndex = quests.gateIndex;
   const t = quests.target;
-  drawMap($('map'), { world, player, horse, step: quests.step, target: t ? targetPosition(t) : null });
+  const outside = interiors.current
+    ? { position: new THREE.Vector3(ROOMS[interiors.current].door.x, 0, ROOMS[interiors.current].door.z), object: player.object }
+    : player;
+  drawMap($('map'), { world, player: outside, horse, step: quests.step, target: t ? targetPosition(t) : null });
 }
 
 function openPause(tab = 'carte') {
@@ -400,7 +439,7 @@ window.addEventListener('keydown', (e) => {
 document.addEventListener('pointerlockchange', () => {
   const locked = !!document.pointerLockElement;
   // Échap libère la souris : on ouvre le menu pause
-  if (wasLocked && !locked && started && !paused && !isTouch) openPause('reglages');
+  if (wasLocked && !locked && started && !paused && !isTouch && !ui.modalOpen && !economy.shopOpen) openPause('reglages');
   wasLocked = locked;
 });
 
@@ -422,6 +461,26 @@ const onSettings = () => {
 };
 for (const id of ['set-music', 'set-sfx', 'set-sens', 'set-quality']) $(id).addEventListener('input', onSettings);
 $('apply-quality').addEventListener('click', () => { save(false); location.reload(); });
+
+// ---------- Portes des intérieurs ----------
+let doorBusy = false;
+function goThroughDoor(door) {
+  if (doorBusy) return;
+  doorBusy = true;
+  input.enabled = false;
+  $('fade').classList.add('on');
+  setTimeout(() => {
+    if (door.exit) interiors.exit(player); else interiors.enter(door.id, player);
+    tod.indoor = !!interiors.current;
+    cam.yaw = player.object.rotation.y + Math.PI;
+    cam.pitch = interiors.current ? 0.3 : 0.18;
+    cam.dist = interiors.current ? 2.9 : 4.6;
+    camTarget.copy(player.position).add(new THREE.Vector3(0, 1.55, 0));
+    $('fade').classList.remove('on');
+    input.enabled = true;
+    doorBusy = false;
+  }, 380);
+}
 
 // ---------- Boucle principale ----------
 let started = false;
@@ -459,10 +518,15 @@ function frame() {
       const nearHorse = !horse.mounted && horse.position.distanceTo(player.position) < 2.6 && quests.step >= 7;
       if (horse.mounted) {
         if (actions.interact) {
-          if (near && Math.abs(horse.speed) < 1.5) quests.talkTo(near);
+          if (interiors.nearDoor(player.position) && Math.abs(horse.speed) < 1.5) ui.toast('Descends de cheval pour entrer.', 1800);
+          else if (near && Math.abs(horse.speed) < 1.5) quests.talkTo(near);
           else if (Math.abs(horse.speed) < 1.5) { horse.setMounted(false); player.dismount(horse); course.lance.visible = false; save(false); }
           else ui.toast('Ralentis pour descendre.', 1200);
         }
+      } else if (actions.interact && interiors.nearDoor(player.position)) {
+        goThroughDoor(interiors.nearDoor(player.position));
+      } else if (actions.interact && interiors.nearAltar(player.position)) {
+        ui.showDialog([['', 'Tu t\'agenouilles devant l\'autel et pries pour Montclair, pour Sire Godefroy… et pour le jour de ton adoubement.'], ['', 'Le silence de l\'église t\'apaise.']]);
       } else if (actions.interact && near && (!nearHorse || near.object.position.distanceTo(player.position) < horse.position.distanceTo(player.position))) {
         quests.talkTo(near);
       } else if (actions.interact && nearHorse) {
@@ -521,13 +585,17 @@ function frame() {
     const key = isTouch ? '💬' : '[E]';
     if (ui.dialogOpen || f) ui.setPrompt(null);
     else if (horse.mounted) ui.setPrompt(near ? `${key} Parler à ${near.name}` : (Math.abs(horse.speed) < 1.5 ? `${key} Descendre de cheval` : null));
+    else if (interiors.nearDoor(player.position)) {
+      const d = interiors.nearDoor(player.position);
+      ui.setPrompt(d.exit ? `${key} Sortir` : `${key} Entrer dans ${ROOMS[d.id].name}`);
+    } else if (interiors.nearAltar(player.position)) ui.setPrompt(`${key} Prier`);
     else if (quests.step >= 7 && horse.position.distanceTo(player.position) < 2.6) ui.setPrompt(`${key} Monter sur Tonnerre`);
     else if (near) ui.setPrompt(`${key} Parler à ${near.name}`);
     else ui.setPrompt(null);
 
     // Objectif : losange + boussole
     const target = quests.target;
-    if (target && !f) {
+    if (target && !f && !interiors.current) {
       const p = targetPosition(target);
       marker.visible = true;
       marker.position.set(p.x, target.markerHeight + Math.sin(time * 3) * 0.12, p.z);
@@ -549,7 +617,7 @@ function frame() {
     // Musique et ambiance
     music.setMood(f ? 'combat' : 'explore');
     ambience.quiet = !!f;
-    ambience.update(dt, player.position, { night: tod.night, rain: tod.rainAmount });
+    ambience.update(dt, player.position, { night: tod.night, rain: tod.rainAmount, indoor: !!interiors.current });
 
     // Sauvegarde discrète de la position toutes les 8 secondes
     autoSaveIn -= dt;
@@ -565,6 +633,7 @@ function frame() {
   clockIn -= dt;
   if (clockIn < 0) { clockIn = 0.5; $('clock').textContent = tod.label(); }
   course.update(dt);
+  interiors.update(dt);
   updateCamera(dt, look);
   world.update(dt, player.position, camera.position);
   grass.update(time);
@@ -587,6 +656,7 @@ function beginPlay(message) {
   if (isTouch) $('touch').classList.remove('hidden');
   input.enabled = true;
   started = true;
+  economy.updateHUD();
   ui.toast(message, 3000);
 }
 
@@ -598,9 +668,16 @@ function restoreWorld(data) {
   if (typeof data.hour === 'number') tod.setTime(data.hour);
   if (data.weather) { if (data.weatherLocked) tod.lockWeather(data.weather); else tod.setWeather(data.weather, true); }
   ch4.placeForStep(step);
+  // Deniers et équipement (les anciennes sauvegardes reçoivent une bourse selon leur avancée)
+  if (data.eco) economy.restore(data.eco);
+  else {
+    const s0 = data.step;
+    economy.money = (s0 >= 3 ? 10 : 0) + (s0 >= 5 ? 25 : 0) + (s0 >= 9 ? 15 : 0) + (s0 >= 10 ? 35 : 0) + (s0 >= 15 ? 40 : 0) + (s0 >= 24 ? 60 : 0);
+    if (s0 >= 13) economy.owned.epee = true;
+  }
+  if (Object.keys(economy.owned).length) player.applyEquipment(economy.owned, economy.stats());
   if (step === 23 && tod.night < 0.5) { tod.setTime(22.5); tod.lockWeather('brume'); }
   quests.restore({ ...data, step });
-  if (step >= 13) player.setSword(createSword(false));
   if (data.horse) {
     horse.position.set(data.horse.x, 0, data.horse.z);
     horse.object.rotation.y = data.horse.rot;
@@ -646,4 +723,4 @@ $('start').addEventListener('click', () => {
 });
 
 // Accès pour le débogage depuis la console du navigateur
-window.game = { player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, tod, life, music, openPause, closePause };
+window.game = { player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, tod, life, music, economy, interiors, openPause, closePause, goThroughDoor };

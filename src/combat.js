@@ -68,6 +68,8 @@ export class Fighter {
     this.hp = this.maxHp;
     this.speed = opts.speed ?? 1;
     this.damageMul = opts.damageMul ?? 1;
+    this.defenseMul = 1;    // < 1 : armure (moins de dégâts reçus)
+    this.blockCostMul = 1;  // < 1 : écu (parer fatigue moins)
     this.shield = !!opts.shield;
     this.stamina = STAMINA_MAX;
     this.exhausted = false;
@@ -163,7 +165,7 @@ export class Fighter {
 
   // ---- Réactions ----
   takeHit(damage) {
-    this.hp = Math.max(0, this.hp - damage);
+    this.hp = Math.max(0, this.hp - damage * this.defenseMul);
     this.attack = null;
     this.parry = null;
     if (this.hp <= 0) this.setState('defeated');
@@ -171,7 +173,7 @@ export class Fighter {
   }
   /** Coup bloqué : coûte de l'endurance. Renvoie true si la garde est brisée. */
   blockedHit(kind = 'light') {
-    this.spend(BLOCK_COST[kind] || 8);
+    this.spend((BLOCK_COST[kind] || 8) * this.blockCostMul);
     if (this.stamina <= 0) {
       this.setState('staggered', 0.9);
       return true;

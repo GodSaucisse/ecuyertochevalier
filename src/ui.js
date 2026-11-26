@@ -8,9 +8,18 @@ export class UI {
     this.dialogIndex = 0;
     this.dialogDone = null;
     this.toastTimer = null;
+    this.choice = null;
+    this.modalOpen = false; // un menu demande la souris (choix, boutique)
     $('dialog').addEventListener('pointerdown', (e) => {
       e.stopPropagation();
-      this.advanceDialog();
+      if (!this.choice) this.advanceDialog();
+    });
+    // Choix au clavier : 1, 2, 3… ou Échap pour la dernière option
+    window.addEventListener('keydown', (e) => {
+      if (!this.choice) return;
+      const n = { Digit1: 0, Digit2: 1, Digit3: 2, Numpad1: 0, Numpad2: 1, Numpad3: 2 }[e.code];
+      if (n !== undefined && n < this.choice.options.length) { e.preventDefault(); this.pick(n); }
+      else if (e.code === 'Escape') { e.preventDefault(); this.pick(this.choice.options.length - 1); }
     });
   }
 
@@ -45,7 +54,39 @@ export class UI {
     $('compass-dist').textContent = `${Math.round(distance)} m`;
   }
 
-  get dialogOpen() { return this.dialogLines !== null; }
+  get dialogOpen() { return this.dialogLines !== null || this.choice !== null; }
+
+  /** Question avec plusieurs réponses. options : [{ label, value }]. */
+  showChoice(name, text, options, onPick) {
+    this.choice = { options, onPick };
+    this.modalOpen = true;
+    if (document.pointerLockElement) document.exitPointerLock();
+    $('dialog').classList.remove('hidden');
+    $('dialog-name').textContent = name;
+    $('dialog-name').style.display = name ? '' : 'none';
+    $('dialog-text').textContent = text;
+    const box = $('dialog-next');
+    box.textContent = '';
+    options.forEach((o, i) => {
+      const b = document.createElement('button');
+      b.className = 'choice';
+      b.textContent = (this.isTouch ? '' : `${i + 1}. `) + o.label;
+      b.addEventListener('pointerdown', (e) => { e.stopPropagation(); e.preventDefault(); this.pick(i); });
+      box.appendChild(b);
+    });
+    this.setPrompt(null);
+  }
+
+  pick(i) {
+    const c = this.choice;
+    if (!c) return;
+    this.choice = null;
+    this.modalOpen = false;
+    $('dialog').classList.add('hidden');
+    $('dialog-next').textContent = '';
+    if (this.onModalClosed) this.onModalClosed();
+    c.onPick(c.options[i].value);
+  }
 
   /** lines : liste de [nom, texte]. onDone est appelé à la fin du dialogue. */
   showDialog(lines, onDone) {

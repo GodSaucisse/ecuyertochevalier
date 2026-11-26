@@ -1,7 +1,7 @@
 // Le temps qui passe : course du soleil et de la lune, couleurs du ciel, étoiles,
 // torches et fenêtres éclairées la nuit, et météo (clair, nuageux, brume, pluie).
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261206';
+import { Tex } from './textures.js?v=202611261218';
 
 const C = (hex) => new THREE.Color(hex);
 // Ambiances de référence, selon la hauteur du soleil
@@ -240,6 +240,14 @@ export class TimeOfDay {
       t.flame.scale.set(1, flick, 1);
     }
 
+    // À l'intérieur : pas de pluie, pas d'étoiles, une brume légère
+    if (this.indoor) {
+      this.scene.fog.density = 0.006;
+      this.scene.fog.color.setHex(0x1a1410);
+      this.stars.material.opacity = 0;
+      this.rain.visible = false;
+      return;
+    }
     // Pluie
     this.rain.material.opacity = rain * 0.6;
     this.rain.visible = rain > 0.03;

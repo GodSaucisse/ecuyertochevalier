@@ -1,7 +1,7 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
 import * as THREE from 'three';
-import { HIDE } from './layout.js?v=202611261206';
-import { playSuccess } from './audio.js?v=202611261206';
+import { HIDE } from './layout.js?v=202611261218';
+import { playSuccess } from './audio.js?v=202611261218';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -131,6 +131,7 @@ export class QuestManager {
     ], () => {
       if (this.onMorning) this.onMorning();
       playSuccess();
+      this.reward(60, 'récompense de Sire Godefroy');
       this.goTo(24);
       setTimeout(() => this.ui.toast('Fin du chapitre IV. La suite arrive bientôt !', 5000), 2500);
     });
@@ -155,6 +156,7 @@ export class QuestManager {
     playSuccess();
     if (this.gateIndex >= this.course.gates.length) {
       const N = this.npcs.bertrand.name;
+      this.reward(15, 'parcours réussi');
       this.goTo(9);
       this.ui.showDialog([
         [N, 'Bien mené ! Tu tiens en selle mieux que je ne l\'aurais cru.'],
@@ -176,7 +178,7 @@ export class QuestManager {
     this.course.cheer();
     if (this.joustHits >= 3) {
       playSuccess();
-      this.ui.toast('Magnifique ! La foule t\'acclame.', 3000);
+      this.reward(35, 'la foule t\'acclame');
       this.goTo(10);
     } else {
       this.ui.toast(`Touché ! (${this.joustHits}/3)`, 1500);
@@ -185,6 +187,8 @@ export class QuestManager {
   }
 
   npcByName(id) { return this.npcs.list.find((n) => n.id === id); }
+
+  reward(n, reason) { if (this.onReward) this.onReward(n, reason); }
 
   serialize() {
     return { step: this.step, hits: this.hits, mathildeIndex: this.mathildeIndex, gateIndex: this.gateIndex, joustHits: this.joustHits, clues: this.clues };
@@ -213,7 +217,7 @@ export class QuestManager {
       [N, 'Assez ! Assez ! … Par saint Georges, tu apprends vite.'],
       [N, 'Tu as bloqué, tu as frappé, tu as tenu ta garde. C\'est ainsi que l\'on reste en vie sur un champ de bataille.'],
       [N, 'Va donc raconter ça à Sire Godefroy. Il voudra l\'entendre de ta bouche.'],
-    ], () => { playSuccess(); this.goTo(5); });
+    ], () => { playSuccess(); this.reward(25, 'victoire contre Bertrand'); this.goTo(5); });
   }
 
   /** Appelé quand le joueur perd le duel libre. */
@@ -269,6 +273,54 @@ export class QuestManager {
         ui.showDialog([[N, 'Moi ? J\'étais à l\'entraînement avec toi, ce jour-là. Mais méfie-toi de ceux qui comptent l\'argent du seigneur…']]);
         return;
       }
+    }
+    // Gautier : la forge (sauf pendant l'enquête)
+    if (npc.id === 'forgeron') {
+      ui.showChoice(N, 'Alors, écuyer, qu\'est-ce qui t\'amène à ma forge ?', [
+        { label: 'Voir ton équipement', value: 'shop' },
+        { label: 'Bavarder', value: 'talk' },
+        { label: 'Rien, merci', value: 'no' },
+      ], (v) => {
+        if (v === 'shop' && this.onShop) this.onShop();
+        else if (v === 'talk') {
+          npc.lineIndex = (npc.lineIndex ?? -1) + 1;
+          ui.showDialog(npc.lines[npc.lineIndex % npc.lines.length].map((t) => [N, t]));
+        }
+      });
+      return;
+    }
+    // Raoul : la taverne
+    if (npc.id === 'tavernier') {
+      const rumors = [
+        'Le Borgne ? On dit qu\'il a perdu son œil contre un chevalier du comte, et qu\'il ne pardonne à aucun homme d\'armes.',
+        'Des marchands ont vu des feux de camp dans les bois, vers l\'abbaye. Beaucoup de feux. Trop pour une poignée de brigands.',
+        'Le comte réunit sa cour à la Pentecôte. Il paraît qu\'il adoubera plusieurs écuyers… si leur seigneur les présente.',
+      ];
+      ui.showChoice(N, 'Bienvenue à la Pomme d\'Or ! Qu\'est-ce que je te sers ?', [
+        { label: 'Une bière (2 🪙)', value: 'beer' },
+        { label: 'Des nouvelles ?', value: 'news' },
+        { label: 'Rien, merci', value: 'no' },
+      ], (v) => {
+        if (v === 'beer') {
+          if (this.onPay && this.onPay(2)) ui.showDialog([[N, 'Et une bière de l\'abbaye, une ! À ta santé, futur chevalier.'], ['', 'Elle est fraîche et un peu amère. Tu te sens ragaillardi.']]);
+          else ui.showDialog([[N, 'Deux deniers, mon garçon. Pas de crédit pour les écuyers !']]);
+        } else if (v === 'news') {
+          this.rumorIndex = ((this.rumorIndex ?? -1) + 1) % rumors.length;
+          ui.showDialog([[N, rumors[this.rumorIndex]]]);
+        }
+      });
+      return;
+    }
+    // Bertrand : revanche payée, quand il n'a rien d'autre à faire
+    if (npc.id === 'bertrand' && (this.step === 5 || this.step >= 11) && this.step !== 19) {
+      ui.showChoice(N, 'Un petit duel pour te dérouiller les bras ? Bats-moi, et je te donne 15 deniers.', [
+        { label: 'En garde !', value: 'yes' },
+        { label: 'Pas maintenant', value: 'no' },
+      ], (v) => {
+        if (v === 'yes' && this.onRematch) this.onRematch();
+        else ui.showDialog([[N, 'Comme tu voudras. Mais une lame qui dort finit par rouiller.']]);
+      });
+      return;
     }
     if (npc.id === 'aymeric') {
       ui.showDialog([[N, this.step < 19
@@ -435,7 +487,7 @@ export class QuestManager {
     this.hits++;
     if (this.hits >= HITS_NEEDED) {
       playSuccess();
-      this.ui.toast('Objectif accompli !');
+      this.reward(10, 'Bertrand est satisfait');
       this.goTo(3);
     } else {
       this.refresh();

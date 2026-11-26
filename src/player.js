@@ -1,7 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261206';
-import { Fighter } from './combat.js?v=202611261206';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261218';
+import { Fighter } from './combat.js?v=202611261218';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -15,6 +15,8 @@ function easeOut(t) { return 1 - (1 - t) * (1 - t); }
 export class Player {
   constructor(scene, world) {
     this.world = world;
+    this.scene = scene;
+    this.look = { trousers: 0x4a4436, hair: 0x6b4423 };
     this.h = createHumanoid({ outfit: 'gambeson', trousers: 0x4a4436, hair: 0x6b4423 });
     this.object = this.h.root;
     this.object.position.set(0, 0, 40);
@@ -39,6 +41,38 @@ export class Player {
   }
 
   get position() { return this.object.position; }
+
+  /**
+   * Habille le joueur selon son équipement (casque, écu, cotte de mailles, épée)
+   * et règle ses statistiques de combat.
+   */
+  applyEquipment(eq, stats) {
+    const old = this.h.root;
+    const pos = old.position.clone(), rot = old.rotation.y, visible = old.visible;
+    this.scene.remove(old);
+    this.h = createHumanoid({
+      outfit: eq.haubert ? 'mail' : 'gambeson',
+      trousers: this.look.trousers, hair: this.look.hair,
+      helmet: !!eq.casque, coif: !!eq.haubert && !!eq.casque, shield: !!eq.ecu,
+    });
+    this.object = this.h.root;
+    this.object.position.copy(pos);
+    this.object.rotation.y = rot;
+    this.object.visible = visible;
+    this.scene.add(this.object);
+    const sword = createSword(!eq.epee);
+    sword.rotation.x = 0.45;
+    this.h.handR.add(sword);
+    this.sword = sword;
+    const f = this.fighter;
+    f.h = this.h;
+    f.sword = sword;
+    f.swordBase = 0.45;
+    f.shield = !!eq.ecu;
+    f.defenseMul = stats.defense;
+    f.blockCostMul = stats.blockCost;
+    f.damageMul = stats.damage;
+  }
 
   /** Change l'arme tenue en main (ex. : vraie épée au chapitre III). */
   setSword(sword) {

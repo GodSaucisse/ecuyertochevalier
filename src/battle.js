@@ -2,10 +2,10 @@
 // Reprend les règles et l'interface du duel, avec une cible verrouillée
 // que l'on peut changer (Tab / 🎯).
 import * as THREE from 'three';
-import { Duel, setThreat } from './duel.js?v=202611261206';
-import { Fighter } from './combat.js?v=202611261206';
-import { animateWalk } from './humanoid.js?v=202611261206';
-import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261206';
+import { Duel, setThreat } from './duel.js?v=202611261218';
+import { Fighter } from './combat.js?v=202611261218';
+import { animateWalk } from './humanoid.js?v=202611261218';
+import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261218';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -265,7 +265,7 @@ export class Battle extends Duel {
       else this.message(playerAttacks ? 'Bloqué' : 'Paré', 500);
       return;
     }
-    const dmg = ev.damage * (playerAttacks ? 1.4 : 1); // vraie épée contre gambisons
+    const dmg = ev.damage; // l'épée du joueur est prise en compte dans son damageMul
     def.takeHit(dmg);
     playHurt();
     this.burst(contact, 12, 0xd8c8a8);

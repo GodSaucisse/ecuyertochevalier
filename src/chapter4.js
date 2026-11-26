@@ -1,9 +1,9 @@
 // Chapitre IV : le traître. Croix de pierre, rencontre nocturne, filature, affrontement.
 import * as THREE from 'three';
-import { Tex, metricBoxUV } from './textures.js?v=202611261206';
-import { CROSS, HIDE, BORGNE_FROM, STEWARD_PATH } from './layout.js?v=202611261206';
-import { makeNPC } from './npcs.js?v=202611261206';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261206';
+import { Tex, metricBoxUV } from './textures.js?v=202611261218';
+import { CROSS, HIDE, BORGNE_FROM, STEWARD_PATH } from './layout.js?v=202611261218';
+import { makeNPC } from './npcs.js?v=202611261218';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261218';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const STEWARD_HOME = { x: 6.5, z: -39, rot: -Math.PI / 2 };
@@ -62,7 +62,7 @@ export function createChapter4(scene, world) {
     look: { outfit: 'lord', tunic: 0x2f4a2a, trousers: 0x2a2a28, hair: 0x1a1410, cloak: 0x4a3a2a },
   });
   const anselme = makeNPC(scene, world, {
-    id: 'anselme', name: 'Père Anselme', x: -18.4, z: -5.2, rotY: Math.PI,
+    id: 'anselme', name: 'Père Anselme', x: -17.2, z: -5.9, rotY: Math.PI,
     look: { outfit: 'lord', tunic: 0x3a2a1e, trousers: 0x3a2a1e, hair: 0x8a8070, hood: 0x3a2a1e },
   });
   // Le Borgne, chef des brigands qui s'était enfui

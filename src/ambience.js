@@ -1,5 +1,5 @@
 // Ambiance sonore : vent, oiseaux, cloche de l'église.
-import { audio, atDistance, playBell } from './audio.js?v=202611261206';
+import { audio, atDistance, playBell } from './audio.js?v=202611261218';
 
 const CHURCH_BELL = { x: -20, z: -1.8 };
 
@@ -119,8 +119,10 @@ export class Ambience {
     }
   }
 
-  update(dt, listener, { night = 0, rain = 0 } = {}) {
+  update(dt, listener, { night = 0, rain = 0, indoor = false } = {}) {
     if (!this.started) return;
+    // Dedans, les bruits du dehors sont étouffés
+    audio.ambience.gain.setTargetAtTime(indoor ? 0.2 : 1, audio.ctx.currentTime, 0.3);
     this.rainGain.gain.setTargetAtTime(rain * 0.12, audio.ctx.currentTime, 1);
     // La nuit : grillons et chouette ; le jour : oiseaux
     if (night > 0.5 && rain < 0.3 && !this.quiet) {
