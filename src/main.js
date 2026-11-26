@@ -1,34 +1,36 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js?v=202611261343';
-import { Player } from './player.js?v=202611261343';
-import { Input } from './input.js?v=202611261343';
-import { UI } from './ui.js?v=202611261343';
-import { createNPCs } from './npcs.js?v=202611261343';
-import { QuestManager } from './quests.js?v=202611261343';
-import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261343';
-import { createEnvironment } from './sky.js?v=202611261343';
-import { createPostFX } from './postfx.js?v=202611261343';
-import { createGrass } from './grass.js?v=202611261343';
-import { createParticles } from './particles.js?v=202611261343';
-import { Duel } from './duel.js?v=202611261343';
-import { Battle } from './battle.js?v=202611261343';
-import { loadSave, writeSave, clearSave } from './save.js?v=202611261343';
-import { Horse } from './horse.js?v=202611261343';
-import { createCourse } from './course.js?v=202611261343';
-import { createLife } from './life.js?v=202611261343';
-import { createChapter3 } from './chapter3.js?v=202611261343';
-import { createChapter4 } from './chapter4.js?v=202611261343';
-import { createInteriors, ROOMS } from './interiors.js?v=202611261343';
-import { createChapter5 } from './chapter5.js?v=202611261343';
-import { Economy } from './economy.js?v=202611261343';
-import { TimeOfDay } from './timeofday.js?v=202611261343';
-import { STABLE_HORSE, HIDE } from './layout.js?v=202611261343';
-import { createSword } from './humanoid.js?v=202611261343';
-import { Music } from './music.js?v=202611261343';
-import { Ambience } from './ambience.js?v=202611261343';
-import { loadSettings, saveSettings } from './settings.js?v=202611261343';
-import { drawMap } from './map.js?v=202611261343';
+import { buildWorld } from './world.js?v=202611261414';
+import { Player } from './player.js?v=202611261414';
+import { Input } from './input.js?v=202611261414';
+import { UI } from './ui.js?v=202611261414';
+import { createNPCs } from './npcs.js?v=202611261414';
+import { QuestManager } from './quests.js?v=202611261414';
+import { initAudio, playHit, playSwing, playLanceHit, setVolumes, playStep } from './audio.js?v=202611261414';
+import { Activities } from './activities.js?v=202611261414';
+import { Tutorial } from './tutorial.js?v=202611261414';
+import { createEnvironment } from './sky.js?v=202611261414';
+import { createPostFX } from './postfx.js?v=202611261414';
+import { createGrass } from './grass.js?v=202611261414';
+import { createParticles } from './particles.js?v=202611261414';
+import { Duel } from './duel.js?v=202611261414';
+import { Battle } from './battle.js?v=202611261414';
+import { loadSave, writeSave, clearSave } from './save.js?v=202611261414';
+import { Horse } from './horse.js?v=202611261414';
+import { createCourse } from './course.js?v=202611261414';
+import { createLife } from './life.js?v=202611261414';
+import { createChapter3 } from './chapter3.js?v=202611261414';
+import { createChapter4 } from './chapter4.js?v=202611261414';
+import { createInteriors, ROOMS } from './interiors.js?v=202611261414';
+import { createChapter5 } from './chapter5.js?v=202611261414';
+import { Economy } from './economy.js?v=202611261414';
+import { TimeOfDay } from './timeofday.js?v=202611261414';
+import { STABLE_HORSE, HIDE } from './layout.js?v=202611261414';
+import { createSword } from './humanoid.js?v=202611261414';
+import { Music } from './music.js?v=202611261414';
+import { Ambience } from './ambience.js?v=202611261414';
+import { loadSettings, saveSettings } from './settings.js?v=202611261414';
+import { drawMap } from './map.js?v=202611261414';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -100,6 +102,25 @@ quests.onReward = (n, reason) => { economy.earn(n, ui, reason); };
 quests.onPay = (n) => { if (economy.money < n) return false; economy.money -= n; economy.updateHUD(); return true; };
 quests.onShop = () => economy.openShop(ui, () => { relock(); save(false); });
 ui.onModalClosed = () => relock();
+
+// ---------- Activités : arc, chasse, dés, course, quêtes secondaires ----------
+const activities = new Activities({ scene, world, ui, npcs, quests, economy, horse, course, player, interiors, rooms: ROOMS, save: (i) => save(i) });
+npcs.list.push(...activities.extraNPCs);
+activities.onCamReset = (yaw) => { cam.yaw = yaw; };
+const tutorial = new Tutorial(isTouch);
+const GREETINGS = { tavernier: 'Qu\'est-ce que je te sers, écuyer ?', anselme: 'Oui, mon fils ?', hersende: 'Oui, écuyer ?', bertrand: 'Qu\'y a-t-il, écuyer ?' };
+/** Parler à un personnage : l'histoire d'abord, puis les activités. */
+function talkTo(npc) {
+  if (activities.talk(npc)) return;
+  const story = quests.target === npc || (quests.step === 19 && ['forgeron', 'anselme', 'mathilde'].includes(npc.id));
+  const extra = story ? null : activities.extraOptions(npc);
+  if (!extra) { quests.talkTo(npc); return; }
+  const opts = extra.map((o, i) => ({ label: o.label, value: i }));
+  opts.push({ label: npc.name === 'Un vieux soldat' ? 'Bavarder' : 'Autre chose', value: 'talk' });
+  ui.showChoice(npc.name, GREETINGS[npc.id] || (npc.name === 'Un vieux soldat' ? 'Hé, l\'écuyer ! Une partie de dés ?' : 'Oui ?'), opts, (v) => {
+    if (v === 'talk') quests.talkTo(npc); else extra[v].run();
+  });
+}
 function relock() {
   if (isTouch || paused) return;
   try { const p = renderer.domElement.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (_) { /* rien */ }
@@ -331,6 +352,7 @@ let savedTimer = null;
 function save(showIndicator = true) {
   const ok = writeSave({
     ...quests.serialize(),
+    act: activities.serialize(),
     pos: interiors.current ? [ROOMS[interiors.current].door.x, ROOMS[interiors.current].door.z] : [player.position.x, player.position.z],
     eco: economy.serialize(),
     horse: { x: horse.position.x, z: horse.position.z, rot: horse.heading, mounted: horse.mounted },
@@ -383,6 +405,11 @@ function updateCamera(dt, look) {
       cam.yaw += diff * Math.min(1, dt * 2.5);
     }
     cam.dist += ((camera.aspect < 1 ? 8.5 : 6.8) - cam.dist) * Math.min(1, dt * 3);
+  } else if (activities.bow.aiming) {
+    // Visée à l'arc : caméra rapprochée, par-dessus l'épaule
+    cam.yaw -= look.dx * 0.0018;
+    cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.0018, -0.5, 0.8);
+    cam.dist += (2.1 - cam.dist) * Math.min(1, dt * 8);
   } else {
     cam.yaw -= look.dx * 0.0025;
     cam.pitch = THREE.MathUtils.clamp(cam.pitch + look.dy * 0.0025, -0.25, 1.25);
@@ -395,13 +422,14 @@ function updateCamera(dt, look) {
   camTarget.lerp(desired, 1 - Math.exp(-dt * 12));
   const cp = Math.cos(cam.pitch);
   // Caméra par-dessus l'épaule (le héros légèrement à gauche de l'écran, comme dans For Honor)
-  const shoulder = (f ? (camera.aspect < 1 ? 0.35 : 0.95) : 0.55) * Math.min(1, cam.dist / 4.6);
+  const shoulder = activities.bow.aiming && !f ? 0.62 : (f ? (camera.aspect < 1 ? 0.35 : 0.95) : 0.55) * Math.min(1, cam.dist / 4.6);
   const rx = Math.cos(cam.yaw) * shoulder, rz = -Math.sin(cam.yaw) * shoulder;
   camera.position.set(
     camTarget.x + Math.sin(cam.yaw) * cp * cam.dist + rx,
     camTarget.y + Math.sin(cam.pitch) * cam.dist,
     camTarget.z + Math.cos(cam.yaw) * cp * cam.dist + rz,
   );
+  if (!interiors.room) avoidWalls(camTarget.x + rx, camTarget.y, camTarget.z + rz);
   const shake = f ? f.shake : 0;
   if (shake > 0) {
     const k = shake * 0.06;
@@ -418,6 +446,33 @@ function updateCamera(dt, look) {
     camera.position.y = THREE.MathUtils.clamp(camera.position.y, 0.5, b.h - 0.4);
   }
   camera.lookAt(camTarget.x + rx, camTarget.y, camTarget.z + rz);
+}
+
+/** Dehors : la caméra se rapproche du héros plutôt que de traverser un mur ou un tronc. */
+const camFrom = new THREE.Vector3(), camProbe = new THREE.Vector3();
+function avoidWalls(px, py, pz) {
+  camFrom.set(px, py, pz);
+  const to = camera.position;
+  const N = 14;
+  let hit = 1;
+  for (let i = 1; i <= N && hit === 1; i++) {
+    const t = i / N;
+    camProbe.lerpVectors(camFrom, to, t);
+    const x = camProbe.x, y = camProbe.y, z = camProbe.z, m = 0.25;
+    for (const b of world.boxes) {
+      if (y < b.top + 0.2 && x > b.minX - m && x < b.maxX + m && z > b.minZ - m && z < b.maxZ + m) { hit = t; break; }
+    }
+    if (hit !== 1) break;
+    for (const c of world.circles) {
+      if (c.r < 0.3 || y > c.top + 0.2) continue;
+      const dx = x - c.x, dz = z - c.z;
+      if (dx * dx + dz * dz < (c.r + 0.2) ** 2) { hit = t; break; }
+    }
+  }
+  if (hit < 1) {
+    const k = Math.max(0.12, hit - 1 / N);
+    to.lerpVectors(camFrom, to, k);
+  }
 }
 
 function targetPosition(t) {
@@ -495,11 +550,12 @@ function selectTab(tab) {
   document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.id === 'tab-' + tab));
   if (tab === 'carte') renderMap();
+  if (tab === 'journal') $('journal').innerHTML = activities.journalHTML();
 }
 
 function renderMap() {
   world._gateIndex = quests.gateIndex;
-  const t = quests.target;
+  const t = quests.target || activities.target;
   const outside = interiors.current
     ? { position: new THREE.Vector3(ROOMS[interiors.current].door.x, 0, ROOMS[interiors.current].door.z), object: player.object }
     : player;
@@ -590,6 +646,8 @@ let clockIn = 0;
 let autoSaveIn = 8;
 let time = 0;
 let mapRefresh = 0;
+let lastStepIdx = 0;
+let movedThisFrame = 0;
 const clock = new THREE.Clock();
 
 function frame() {
@@ -610,6 +668,9 @@ function frame() {
     const actions = input.consumeActions();
     if (actions.pause) { openPause('reglages'); return; }
     if (actions.map && !f) { openPause('carte'); return; }
+    if (actions.bow && !f && !ui.dialogOpen && !horse.mounted && !interiors.current) {
+      if (activities.hasBow) activities.toggleBow(); else if (activities.unlocked) ui.toast('Tu n\'as pas encore d\'arc. Guillaume l\'archer, au terrain d\'entraînement, pourrait t\'en donner un.', 2600);
+    }
     if (ui.dialogOpen) {
       if (actions.interact || actions.attack || actions.jump || actions.heavy) ui.advanceDialog();
     } else if (f) {
@@ -620,7 +681,8 @@ function frame() {
       if (horse.mounted) {
         if (actions.interact) {
           if (interiors.nearDoor(player.position) && Math.abs(horse.speed) < 1.5) ui.toast('Descends de cheval pour entrer.', 1800);
-          else if (near && Math.abs(horse.speed) < 1.5) quests.talkTo(near);
+          else if (activities.race) { /* pas de pause pendant la course */ }
+          else if (near && Math.abs(horse.speed) < 1.5) talkTo(near);
           else if (Math.abs(horse.speed) < 1.5) { horse.setMounted(false); player.dismount(horse); course.lance.visible = false; save(false); }
           else ui.toast('Ralentis pour descendre.', 1200);
         }
@@ -630,11 +692,22 @@ function frame() {
         goThroughDoor(interiors.nearDoor(player.position));
       } else if (actions.interact && interiors.nearAltar(player.position)) {
         ui.showDialog([['', 'Tu t\'agenouilles devant l\'autel et pries pour Montclair, pour Sire Godefroy… et pour le jour de ton adoubement.'], ['', 'Le silence de l\'église t\'apaise.']]);
+      } else if (actions.interact && activities.hunt.nearCarcass(player.position)) {
+        activities.takeVenison(activities.hunt.nearCarcass(player.position));
+      } else if (actions.interact && activities.nearChicken(player.position) >= 0) {
+        activities.catchChicken(activities.nearChicken(player.position));
       } else if (actions.interact && near && (!nearHorse || near.object.position.distanceTo(player.position) < horse.position.distanceTo(player.position))) {
-        quests.talkTo(near);
+        talkTo(near);
       } else if (actions.interact && nearHorse) {
+        activities.stowBow();
         horse.setMounted(true);
         quests.onMounted();
+      } else if (activities.bow.aiming) {
+        if (actions.attack) {
+          const o = player.position.clone().add(new THREE.Vector3(Math.cos(cam.yaw) * 0.25, 1.5, -Math.sin(cam.yaw) * 0.25));
+          activities.bow.shoot(o, camera);
+        }
+        if (actions.jump) player.jump();
       } else {
         if (actions.attack) player.startAttack();
         if (actions.jump) player.jump();
@@ -647,7 +720,7 @@ function frame() {
       f.update(dtGame);
       horse.update(dt);
     } else if (horse.mounted) {
-      const m = frozen ? { x: 0, y: 0 } : input.move;
+      const m = frozen || activities.freezeMount ? { x: 0, y: 0 } : input.move;
       const prev = horse.position.clone();
       tipPrev.copy(horse.lanceTip(tipNow));
       horse.update(dt, { throttle: m.y, turn: m.x, gallop: input.run });
@@ -658,9 +731,19 @@ function frame() {
       if (withLance) checkJoust(dt);
     } else {
       horse.update(dt);
-      player.update(dt, frozen ? { x: 0, y: 0 } : input.move, input.run, cam.yaw);
-      checkStrike();
+      const before = player.position.clone();
+      player.update(dt, frozen ? { x: 0, y: 0 } : input.move, input.run && !activities.bow.aiming, cam.yaw);
+      if (activities.bow.aiming) player.object.rotation.y = cam.yaw + Math.PI; // le héros regarde où il vise
+      else checkStrike();
+      // Bruits de pas
+      const stepIdx = Math.floor(player.phase / Math.PI);
+      if (stepIdx !== lastStepIdx && player.grounded && player.walkAmount > 0.2) playStep();
+      lastStepIdx = stepIdx;
+      movedThisFrame = Math.hypot(player.position.x - before.x, player.position.z - before.z);
     }
+    activities.update(dt, { inFight: !!f, dialogOpen: ui.dialogOpen, mounted: horse.mounted, indoor: !!interiors.current, camPitch: cam.pitch });
+    tutorial.update(dt, { moved: movedThisFrame, looked: Math.abs(look.dx) + Math.abs(look.dy), nearNPC: !!nearestNPC(), dialogOpen: ui.dialogOpen });
+    movedThisFrame = 0;
     ch3.update(dtGame, player.position, ch3Events);
     ch4.update(dtGame, { position: player.position, mounted: horse.mounted }, ch4Events);
     ch5.update(dtGame, { position: player.position, mounted: horse.mounted, h: player.h }, ch5Events);
@@ -690,6 +773,9 @@ function frame() {
     if (ui.dialogOpen || f || ch5.state.kneeling || ch5.state.mode === 'accolade') ui.setPrompt(null);
     else if (horse.mounted) ui.setPrompt(near ? `${key} Parler à ${near.name}` : (Math.abs(horse.speed) < 1.5 ? `${key} Descendre de cheval` : null));
     else if (quests.step === 27 && ch5.nearKneel(player.position)) ui.setPrompt(`${key} T'agenouiller devant le comte`);
+    else if (activities.hunt.nearCarcass(player.position)) ui.setPrompt(`${key} Récupérer la venaison`);
+    else if (activities.nearChicken(player.position) >= 0) ui.setPrompt(`${key} Attraper la poule`);
+    else if (activities.bow.aiming && !near) ui.setPrompt(isTouch ? '⚔️ Tirer · 🏹 Ranger l\'arc' : '[Clic] Tirer · [B] Ranger l\'arc');
     else if (interiors.nearDoor(player.position)) {
       const d = interiors.nearDoor(player.position);
       ui.setPrompt(d.exit ? `${key} Sortir` : `${key} Entrer dans ${ROOMS[d.id].name}`);
@@ -699,7 +785,7 @@ function frame() {
     else ui.setPrompt(null);
 
     // Objectif : losange + boussole
-    const target = quests.target;
+    const target = activities.race ? activities.target : (quests.target || activities.target);
     if (target && !f && !interiors.current) {
       const p = targetPosition(target);
       marker.visible = true;
@@ -728,7 +814,7 @@ function frame() {
     autoSaveIn -= dt;
     if (autoSaveIn < 0) {
       autoSaveIn = 8;
-      if (!f && !ui.dialogOpen) save(false);
+      if (!f && !ui.dialogOpen && !activities.race) save(false);
     }
   }
 
@@ -781,6 +867,7 @@ function restoreWorld(data) {
     if (s0 >= 13) economy.owned.epee = true;
   }
   if (Object.keys(economy.owned).length) player.applyEquipment(economy.owned, economy.stats());
+  activities.restore(data.act);
   if (step === 23 && tod.night < 0.5) { tod.setTime(22.5); tod.lockWeather('brume'); }
   if (step === 26) step = 25; // la chevauchée recommence devant la porte
   ch5.placeForStep(step);
@@ -828,7 +915,8 @@ $('start').addEventListener('click', () => {
   clearSave();
   beginPlay('Montclair, automne 1126');
   save(false);
+  setTimeout(() => tutorial.start(), 3200);
 });
 
 // Accès pour le débogage depuis la console du navigateur
-window.game = { player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, ch5, tod, life, music, economy, interiors, openPause, closePause, goThroughDoor };
+window.game = { activities, tutorial, player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, ch5, tod, life, music, economy, interiors, openPause, closePause, goThroughDoor };

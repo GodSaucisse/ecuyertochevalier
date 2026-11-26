@@ -2,10 +2,10 @@
 // Reprend les règles et l'interface du duel, avec une cible verrouillée
 // que l'on peut changer (Tab / 🎯).
 import * as THREE from 'three';
-import { Duel, setThreat } from './duel.js?v=202611261343';
-import { Fighter } from './combat.js?v=202611261343';
-import { animateWalk } from './humanoid.js?v=202611261343';
-import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261343';
+import { Duel, setThreat } from './duel.js?v=202611261414';
+import { Fighter } from './combat.js?v=202611261414';
+import { animateWalk } from './humanoid.js?v=202611261414';
+import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261414';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);

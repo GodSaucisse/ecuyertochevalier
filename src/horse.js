@@ -1,7 +1,7 @@
 // Tonnerre, le cheval : modèle articulé, allures (pas, trot, galop) et conduite.
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261343';
-import { playHoof } from './audio.js?v=202611261343';
+import { Tex } from './textures.js?v=202611261414';
+import { playHoof } from './audio.js?v=202611261414';
 
 const SPEEDS = { walk: 2.4, trot: 5.5, gallop: 11.5 };
 const RADIUS = 0.85;
@@ -178,7 +178,7 @@ export class Horse {
     const p = this.object.position;
     if (this.mounted) {
       let target = 0;
-      if (throttle > 0.05) target = gallop ? SPEEDS.gallop : (throttle > 0.6 ? SPEEDS.trot : SPEEDS.walk + (SPEEDS.trot - SPEEDS.walk) * (throttle / 0.6) * 0.5);
+      if (throttle > 0.05) target = gallop ? (this.maxSpeed || SPEEDS.gallop) : (throttle > 0.6 ? SPEEDS.trot : SPEEDS.walk + (SPEEDS.trot - SPEEDS.walk) * (throttle / 0.6) * 0.5);
       else if (throttle < -0.05) target = -1.6;
       const accel = target > this.speed ? 3.2 : 5.5;
       this.speed += Math.sign(target - this.speed) * Math.min(Math.abs(target - this.speed), accel * dt);

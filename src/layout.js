@@ -43,6 +43,9 @@ export const ROAD2 = [
 ];
 export const AMBUSH2 = { x: 66, z: -42, r: 9 };
 
+/** Ermitage de frère Odon, au fond de la forêt de l'ouest (quête secondaire). */
+export const HERMIT = { x: -70, z: 42 };
+
 /** Distance d'un point à un segment, au sol. */
 export function distToSegment(px, pz, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az;
@@ -70,6 +73,7 @@ export function onCourse(x, z, margin = 4.5) {
     if (distToSegment(x, z, a.x, a.z, b.x, b.z) < 3) return true;
   }
   if (Math.hypot(x - AMBUSH.x, z - AMBUSH.z) < AMBUSH.r + 2) return true;
+  if (Math.hypot(x - HERMIT.x - 1, z - HERMIT.z) < 8) return true;
   return Math.abs(x - LISTS.x) < LISTS.halfWidth + 6 && z > LISTS.z0 - 5 && z < LISTS.z1 + 8;
 }
 

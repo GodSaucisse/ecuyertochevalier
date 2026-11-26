@@ -315,3 +315,30 @@ body.in-duel #purse { display: none; }
 #ending .petit { font-size: 0.85rem; opacity: 0.75; margin-top: 1rem; }
 #ending-stats { color: #e8c66a; line-height: 1.6; }
 #ending-continue { font-family: inherit; font-size: 1.1rem; padding: 0.6rem 1.6rem; cursor: pointer; background: #7a2e1f; color: #f8ead0; border: 2px solid #e8c66a; border-radius: 4px; }
+
+/* ---------- Conseils, quêtes secondaires, viseur ---------- */
+#tip {
+  position: absolute; left: 50%; bottom: 30%; transform: translateX(-50%);
+  max-width: min(520px, 90vw); display: flex; gap: 0.6rem; align-items: center;
+  background: rgba(30,22,16,0.9); border: 1px solid #e8c66a; border-radius: 6px; padding: 0.6rem 0.9rem;
+  font-size: 0.95rem; line-height: 1.4; box-shadow: 0 0 18px rgba(232,198,106,0.25);
+}
+.tip-icon { font-size: 1.3rem; }
+#side-quests { font-size: 0.8rem; line-height: 1.45; margin-top: 0.35rem; opacity: 0.9; }
+#side-quests:empty { display: none; }
+#side-quests div::before { content: '✦ '; color: #e8c66a; }
+body.in-duel #side-quests { display: none; }
+#crosshair {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  font-size: 1.8rem; color: #fff; text-shadow: 0 0 4px #000; font-family: monospace;
+}
+@media (max-width: 700px) { #tip { bottom: 140px; } }
+
+body.in-duel .explore-only { display: none !important; }
+#journal { max-height: 60vh; overflow-y: auto; text-align: left; font-size: 0.92rem; line-height: 1.5; padding: 0 0.4rem; }
+#journal h3 { color: #e8c66a; margin: 0.8rem 0 0.3rem; font-size: 1rem; }
+#journal p { margin: 0.2rem 0; }
+#journal ul { margin: 0.2rem 0; padding-left: 1.2rem; }
+#journal li.done { opacity: 0.6; }
+#journal .hints li { font-style: italic; opacity: 0.85; }
+#journal .muted { opacity: 0.6; font-style: italic; }

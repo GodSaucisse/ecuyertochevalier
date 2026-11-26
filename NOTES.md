@@ -84,6 +84,17 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - Mobile : joystick (poussé à fond = galop), 💬 monter/descendre.
 - Joute : la pointe de lance doit passer à moins de 1,2 m de l'écu, au galop (vitesse > 8).
 
+## Activités (activities.js, à partir de l'étape 5)
+- Arc (bow.js) : donné par Guillaume l'archer (terrain d'armes, ~(20,6)). B (ou 🏹) = prendre/ranger, clic = tirer. Flèches avec pesanteur, cibles notées 10→1 en (31.84, 1, ±4).
+- Concours de tir : 5 flèches depuis l'enclos (x < 25.5) ; ≥ 30 points = 10 deniers (puis 4).
+- Chasse (hunt.js) : 6 cerfs dans les bois (52 à 84 m du centre), fuient à 15 m (24 m à cheval), réapparaissent après 90 s. E sur la carcasse = venaison, vendue 8 deniers à Raoul.
+- Dés : « Un vieux soldat » à la taverne, mise 5, 3 dés chacun.
+- Course : Bertrand (étape ≥ 11, sauf 13-14, 19, 24-27), à cheval, sur les 8 portes ; rival à 9,8 m/s ; 20 deniers (puis 8).
+- Quêtes secondaires : poules d'Aude (fermière, (-8.5,27.5), 4 poules, 15 d) ; lettre d'Anselme pour frère Odon (ermitage HERMIT (-70,42), 20 d) ; gibier pour Hersende (2 venaisons, 25 d).
+- « ! » / « ? » dorés au-dessus des personnages ; lignes sous l'objectif ; onglet Journal dans la pause ; sauvegarde dans `act`.
+- Quand on parle à un PNJ qui n'est pas l'objectif de l'histoire, main.js (talkTo) propose d'abord les options des activités.
+- Tutoriel (tutorial.js) : conseils au début d'une nouvelle partie (une seule fois, mémorisé dans localStorage).
+
 ## Avancement
 - [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine, duel d'entraînement.
 - [x] Combat à la For Honor
@@ -98,7 +109,7 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Intérieurs : grande salle, église, taverne
 - [x] Graphismes « For Honor » : lumière, matériaux, armures
 - [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
-- [ ] Caméra qui évite de traverser les murs
+- [x] Caméra qui évite de traverser les murs (intérieurs : limites de la pièce ; dehors : avoidWalls dans main.js)
 - [x] Chapitre V : la Pentecôte, le Borgne capturé, l'adoubement (fin de l'histoire)
-- [ ] Quêtes secondaires, mini-jeux (tir à l'arc, dés, courses), chasse
-- [ ] Finitions : bruits de pas, caméra qui évite les murs dehors, tutoriel
+- [x] Quêtes secondaires, mini-jeux (tir à l'arc, dés, courses), chasse
+- [x] Finitions : bruits de pas, caméra qui évite les murs dehors, tutoriel

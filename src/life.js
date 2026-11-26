@@ -1,8 +1,8 @@
 // La vie du village : forge et forgeron, villageois qui se promènent, poules.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk } from './humanoid.js?v=202611261343';
-import { Tex, metricBoxUV } from './textures.js?v=202611261343';
-import { atDistance, playAnvil, playCluck } from './audio.js?v=202611261343';
+import { createHumanoid, animateWalk } from './humanoid.js?v=202611261414';
+import { Tex, metricBoxUV } from './textures.js?v=202611261414';
+import { atDistance, playAnvil, playCluck } from './audio.js?v=202611261414';
 
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });

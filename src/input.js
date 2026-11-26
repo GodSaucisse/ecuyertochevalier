@@ -11,7 +11,7 @@ export class Input {
     this.joy = { x: 0, y: 0 };
     this.look = { dx: 0, dy: 0 };
     this.zoom = 0;
-    this.actions = { interact: false, attack: false, jump: false, heavy: false, guard: null, target: false, map: false, pause: false };
+    this.actions = { interact: false, attack: false, jump: false, heavy: false, guard: null, target: false, map: false, pause: false, bow: false };
     this.sens = 1;
     this.locked = false;
 
@@ -26,6 +26,7 @@ export class Input {
       if (e.code === 'KeyR') this.actions.heavy = true;
       if (e.code === 'Tab') this.actions.target = true;
       if (e.code === 'KeyM') this.actions.map = true;
+      if (e.code === 'KeyB') this.actions.bow = true;
       if (e.code === 'Escape' || e.code === 'KeyP') this.actions.pause = true;
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
@@ -128,6 +129,7 @@ export class Input {
     bind('btn-heavy', 'heavy');
     bind('btn-dodge', 'jump');
     bind('btn-target', 'target');
+    bind('btn-bow', 'bow');
     // Parer : bouton à maintenir
     const blockBtn = document.getElementById('btn-block');
     blockBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); this.touchBlock = true; blockBtn.setPointerCapture(e.pointerId); });
@@ -162,7 +164,7 @@ export class Input {
   consumeActions() {
     const a = { ...this.actions };
     this.actions.interact = this.actions.attack = this.actions.jump = this.actions.heavy = false;
-    this.actions.target = this.actions.map = this.actions.pause = false;
+    this.actions.target = this.actions.map = this.actions.pause = this.actions.bow = false;
     this.actions.guard = null;
     return a;
   }

@@ -1,7 +1,7 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
 import * as THREE from 'three';
-import { HIDE } from './layout.js?v=202611261343';
-import { playSuccess } from './audio.js?v=202611261343';
+import { HIDE } from './layout.js?v=202611261414';
+import { playSuccess } from './audio.js?v=202611261414';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
