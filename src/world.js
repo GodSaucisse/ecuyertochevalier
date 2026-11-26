@@ -1,8 +1,8 @@
 // Le monde : terrain, château de Montclair, village, église, terrain d'entraînement, forêt.
 import * as THREE from 'three';
-import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611261508';
-import { createSky, SKY } from './sky.js?v=202611261508';
-import { onCourse } from './layout.js?v=202611261508';
+import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611261748';
+import { createSky, SKY } from './sky.js?v=202611261748';
+import { onCourse } from './layout.js?v=202611261748';
 
 // Générateur aléatoire "à graine" : le monde est identique à chaque partie.
 function mulberry32(seed) {

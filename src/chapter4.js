@@ -1,9 +1,9 @@
 // Chapitre IV : le traître. Croix de pierre, rencontre nocturne, filature, affrontement.
 import * as THREE from 'three';
-import { Tex, metricBoxUV } from './textures.js?v=202611261508';
-import { CROSS, HIDE, BORGNE_FROM, STEWARD_PATH } from './layout.js?v=202611261508';
-import { makeNPC } from './npcs.js?v=202611261508';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261508';
+import { Tex, metricBoxUV } from './textures.js?v=202611261748';
+import { CROSS, HIDE, BORGNE_FROM, STEWARD_PATH } from './layout.js?v=202611261748';
+import { makeNPC } from './npcs.js?v=202611261748';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261748';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const STEWARD_HOME = { x: 6.5, z: -39, rot: -Math.PI / 2 };

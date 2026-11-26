@@ -1,11 +1,11 @@
 // Le grand tournoi de la Saint-Martin (après l'adoubement) :
 // 1. la joute contre Sire Hugues de Vaudrey, 2. la mêlée à cheval, 3. la finale à pied contre le champion.
 import * as THREE from 'three';
-import { makeNPC } from './npcs.js?v=202611261508';
-import { createHumanoid, createSword } from './humanoid.js?v=202611261508';
-import { EnemyRider } from './mounted.js?v=202611261508';
-import { LISTS } from './layout.js?v=202611261508';
-import { playLanceHit, playHurt, playBlock, playBell, playSuccess, playVictory } from './audio.js?v=202611261508';
+import { makeNPC } from './npcs.js?v=202611261748';
+import { createHumanoid, createSword } from './humanoid.js?v=202611261748';
+import { EnemyRider } from './mounted.js?v=202611261748';
+import { LISTS } from './layout.js?v=202611261748';
+import { playLanceHit, playHurt, playBlock, playBell, playSuccess, playVictory } from './audio.js?v=202611261748';
 
 const $ = (id) => document.getElementById(id);
 const TILT = { x: LISTS.x + 2, z0: -16, z1: 36 }; // à l'est de la quintaine du chapitre II

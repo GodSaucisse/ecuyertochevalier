@@ -100,6 +100,15 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - mounted.js : coups d'épée à cheval (clic gauche/droit, dégâts selon la vitesse), mannequins d'entraînement en x = 44.5 (z -8 à 19), et EnemyRider (chevalier ennemi monté).
 - tournament.js : à partir de l'étape 28, le héraut près de la lice (51.5, -25.5). Joute (barrière en x = 58, 3 passes, clic au bon moment = coup parfait, E = se protéger), mêlée à cheval (3 chevaliers, 2 attaquent à la fois), finale à pied (Battle contre Sire Raimbaud le Noir, 170 PV). Récompenses 40/60/100 deniers (puis 1/4). Sauvegardé dans `tour`.
 
+## Paris (paris.js) et chapitre VI (chapter6.js)
+- Paris est construit loin de Montclair, origine PARIS = (-600, 0), seulement au premier voyage (ensureParis dans main.js). `inParis(pos)` dit si le joueur y est. Géométries fusionnées par matériau (classe Batch) pour rester léger.
+- Plan local : île de la Cité x ∈ [-74, 74], z ∈ [-20, 20] ; Seine au nord (z -20 → -40) et au sud (z 20 → 34) ; Grand Pont x ∈ [-3.5, 3.5] (maisons, taverne « Au Cheval Blanc ») ; Petit Pont x ∈ [7, 13] ; palais à l'ouest (porte x = -40, grande salle porte (-55, -3.4)) ; cathédrale à l'est (portail x ≈ 35) ; marché Palu (11, 13) ; ruelle en cul-de-sac x ≈ -20.5.
+- Intérieurs ajoutés à ROOMS : palais (verrouillé sauf étapes 32 et ≥ 36), cathedrale, pontTavern. interiors.kit sert à les construire.
+- Étapes : 29 arrivée → vol au marché → 30 poursuite de Colin la Fouine → 31 lui parler (le libérer ou le livrer au guet : flags.colin) → 32 audience du roi Louis VI (Suger, la reine Adélaïde) → saut à 21 h → 33 taverne : s'asseoir et écouter → 34 → 35 combat en sortant (3 ennemis) → 36 rapport → 37 libre (« chapitre VII bientôt »).
+- Reprises : 30-31 → 29, 34-35 → 33. Voyages : Godefroy (Montclair) et le palefrenier (porte sud de Paris).
+- quests.ext = ch6 : refresh / target / talk pour les étapes ≥ 28.
+- Histoire vraie : en 1127, Étienne de Garlande, sénéchal et chancelier, est chassé de la cour (rôle de la reine Adélaïde) ; Louis VI assiégera son château de Livry en 1128. Suger est abbé de Saint-Denis depuis 1122.
+
 ## Avancement
 - [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine, duel d'entraînement.
 - [x] Combat à la For Honor
@@ -119,4 +128,5 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Quêtes secondaires, mini-jeux (tir à l'arc, dés, courses), chasse
 - [x] Finitions : bruits de pas, caméra qui évite les murs dehors, tutoriel
 - [x] Blason et création du héros, combat à cheval, tournoi de la Saint-Martin
-- [ ] Chapitre VI dans une autre région (à choisir)
+- [x] Chapitre VI à Paris « La Cité du roi »
+- [ ] Chapitre VII « La route de Saint-Denis » (escorte de Suger, embuscade à Montmartre), puis le siège de Livry ; plus tard la Terre sainte

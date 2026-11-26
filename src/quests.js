@@ -1,7 +1,7 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
 import * as THREE from 'three';
-import { HIDE } from './layout.js?v=202611261508';
-import { playSuccess } from './audio.js?v=202611261508';
+import { HIDE } from './layout.js?v=202611261748';
+import { playSuccess } from './audio.js?v=202611261748';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -58,12 +58,13 @@ export class QuestManager {
       case 24: return this.npcs.godefroy;
       case 25: case 26: return { position: this.npcs.godefroy.object.position, markerHeight: 3.3 };
       case 27: return this.kneelSpot ? { position: this.kneelSpot, markerHeight: 1.6 } : null;
-      default: return null;
+      default: return this.ext ? this.ext.target(this.step) : null;
     }
   }
 
   refresh() {
     const ui = this.ui;
+    if (this.ext && this.ext.refresh(this.step)) return;
     switch (this.step) {
       case 0: ui.setQuest('Chapitre I · L\'arrivée', 'Présente-toi à Sire Godefroy, dans la cour du château (au nord).'); break;
       case 1: ui.setQuest('Chapitre I · L\'arrivée', 'Rejoins Bertrand, le maître d\'armes, sur le terrain d\'entraînement (à l\'est).'); break;
@@ -237,7 +238,8 @@ export class QuestManager {
     ], retry);
   }
 
-  talkTo(npc) {
+  talkTo(npc, skipExt = false) {
+    if (!skipExt && this.ext && this.ext.talk(npc)) return;
     const ui = this.ui;
     const N = npc.name;
     // Chapitre IV : les témoins

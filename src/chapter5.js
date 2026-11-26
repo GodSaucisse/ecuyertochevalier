@@ -1,14 +1,14 @@
 // Chapitre V : la Pentecôte. Départ avec Sire Godefroy et Bertrand, piège du Borgne,
 // cour du comte et adoubement.
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261508';
-import { ROAD2, AMBUSH2, onRoad2 } from './layout.js?v=202611261508';
-import { Horse } from './horse.js?v=202611261508';
-import { makeNPC } from './npcs.js?v=202611261508';
-import { createHumanoid, createSword, createAxe, createClub, animateWalk } from './humanoid.js?v=202611261508';
-import { Fighter, DIRS } from './combat.js?v=202611261508';
-import { ROOMS } from './interiors.js?v=202611261508';
-import { playBlock, playVictory } from './audio.js?v=202611261508';
+import { Tex } from './textures.js?v=202611261748';
+import { ROAD2, AMBUSH2, onRoad2 } from './layout.js?v=202611261748';
+import { Horse } from './horse.js?v=202611261748';
+import { makeNPC } from './npcs.js?v=202611261748';
+import { createHumanoid, createSword, createAxe, createClub, animateWalk } from './humanoid.js?v=202611261748';
+import { Fighter, DIRS } from './combat.js?v=202611261748';
+import { ROOMS } from './interiors.js?v=202611261748';
+import { playBlock, playVictory } from './audio.js?v=202611261748';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const GATE_WAIT = { lord: { x: -1.6, z: -11, rot: Math.PI / 2 }, bertrand: { x: 1.8, z: -11.5, rot: Math.PI / 2 } };

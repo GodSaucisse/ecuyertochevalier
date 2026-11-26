@@ -1,8 +1,8 @@
 // Duel d'entraînement contre Bertrand : leçons (bloquer, toucher, parer) puis duel libre.
 import * as THREE from 'three';
-import { Fighter } from './combat.js?v=202611261508';
-import { createSword, animateWalk } from './humanoid.js?v=202611261508';
-import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611261508';
+import { Fighter } from './combat.js?v=202611261748';
+import { createSword, animateWalk } from './humanoid.js?v=202611261748';
+import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611261748';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);

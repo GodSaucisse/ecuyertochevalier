@@ -1,13 +1,13 @@
 // Activités hors de l'histoire : arc et concours de tir, chasse, dés, course à cheval,
 // quêtes secondaires (poules d'Aude, lettre pour frère Odon, gibier pour le banquet) et journal.
 import * as THREE from 'three';
-import { makeNPC } from './npcs.js?v=202611261508';
-import { createHumanoid } from './humanoid.js?v=202611261508';
-import { Horse } from './horse.js?v=202611261508';
-import { BowSystem } from './bow.js?v=202611261508';
-import { Hunt } from './hunt.js?v=202611261508';
-import { HERMIT } from './layout.js?v=202611261508';
-import { playSuccess, playCluck, playBell } from './audio.js?v=202611261508';
+import { makeNPC } from './npcs.js?v=202611261748';
+import { createHumanoid } from './humanoid.js?v=202611261748';
+import { Horse } from './horse.js?v=202611261748';
+import { BowSystem } from './bow.js?v=202611261748';
+import { Hunt } from './hunt.js?v=202611261748';
+import { HERMIT } from './layout.js?v=202611261748';
+import { playSuccess, playCluck, playBell } from './audio.js?v=202611261748';
 
 const ARCHER_SPOT = { x: 19.9, z: 6.2 };
 const AUDE_SPOT = { x: -8.5, z: 27.5 };

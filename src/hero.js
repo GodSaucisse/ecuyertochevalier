@@ -1,6 +1,6 @@
 // Création du héros : nom, visage et blason. S'ouvre au début d'une nouvelle partie
 // et depuis l'onglet « Héros » du menu pause.
-import { TINCTURES, drawArms } from './textures.js?v=202611261508';
+import { TINCTURES, drawArms } from './textures.js?v=202611261748';
 
 const $ = (id) => document.getElementById(id);
 

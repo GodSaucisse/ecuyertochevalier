@@ -1,11 +1,11 @@
 // Chapitre III : la route de l'abbaye, l'escorte de Sire Godefroy et l'embuscade.
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261508';
-import { ROAD, AMBUSH, onRoad } from './layout.js?v=202611261508';
-import { Horse } from './horse.js?v=202611261508';
-import { createHumanoid, createSword, createAxe, createClub } from './humanoid.js?v=202611261508';
-import { Fighter, DIRS } from './combat.js?v=202611261508';
-import { playBlock } from './audio.js?v=202611261508';
+import { Tex } from './textures.js?v=202611261748';
+import { ROAD, AMBUSH, onRoad } from './layout.js?v=202611261748';
+import { Horse } from './horse.js?v=202611261748';
+import { createHumanoid, createSword, createAxe, createClub } from './humanoid.js?v=202611261748';
+import { Fighter, DIRS } from './combat.js?v=202611261748';
+import { playBlock } from './audio.js?v=202611261748';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const COURT_SPOT = { x: 0, z: -31, rot: 0 };
