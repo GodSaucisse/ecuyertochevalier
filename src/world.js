@@ -1,8 +1,8 @@
 // Le monde : terrain, château de Montclair, village, église, terrain d'entraînement, forêt.
 import * as THREE from 'three';
-import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611261121';
-import { createSky, SKY } from './sky.js?v=202611261121';
-import { onCourse } from './layout.js?v=202611261121';
+import { Tex, metricBoxUV, metricCylinderUV } from './textures.js?v=202611261148';
+import { createSky, SKY } from './sky.js?v=202611261148';
+import { onCourse } from './layout.js?v=202611261148';
 
 // Générateur aléatoire "à graine" : le monde est identique à chaque partie.
 function mulberry32(seed) {
@@ -56,7 +56,8 @@ export function buildWorld(scene) {
   scene.add(sky);
   animated.push({ update: (dt, camPos) => sky.position.copy(camPos) });
 
-  scene.add(new THREE.HemisphereLight(0xa8bcd6, 0x4a3f2e, 0.5));
+  const hemi = new THREE.HemisphereLight(0xa8bcd6, 0x4a3f2e, 0.5);
+  scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffd6a0, 3.4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -698,5 +699,5 @@ export function buildWorld(scene) {
   function addBare(rect) { bare.push(rect); }
   function addBareFn(fn) { bareFns.push(fn); }
 
-  return { resolve, update, isBare, addBare, addBareFn, bare, quintain, circles, boxes, sun, sunDir };
+  return { resolve, update, isBare, addBare, addBareFn, bare, quintain, circles, boxes, sun, sunDir, sunOffset, hemi, sky, windowMat: M.dark };
 }

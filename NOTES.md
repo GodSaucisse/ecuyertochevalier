@@ -40,6 +40,8 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `music.js` : musique générée en direct (mode dorien de ré : luth, flûte, bourdon ; en combat : vièle et tambour).
   - `ambience.js` : vent, oiseaux, cloche de l'église. Sons selon la distance : `atDistance()` dans audio.js.
   - `settings.js` : réglages (volumes, sensibilité, qualité). `map.js` : carte du monde (menu pause).
+  - `timeofday.js` : jour/nuit (1 h de jeu = 2 min), soleil/lune, couleurs du ciel, nuages, étoiles, torches, fenêtres éclairées, météo (clair, nuageux, brume, pluie). `lockWeather()` pour imposer une météo pendant l'histoire.
+  - `chapter4.js` : croix de pierre, buissons, Aymeric l'intendant (le traître), père Anselme, le Borgne, lanterne, rencontre nocturne et filature.
 
 ## Combat (version simple, demandée par le créateur)
 - Pas de directions. Clic gauche = coup léger, clic droit = coup lourd, Maj (maintenir) = parer, Espace = esquiver, Tab = changer de cible.
@@ -57,6 +59,11 @@ Chapitre II « En selle » : 6 Bertrand aux écuries → 7 monter sur Tonnerre �
 Chapitre III « L'embuscade » : 12 Godefroy dans la cour (donne une épée d'acier) → 13 escorte à cheval sur la route
 → 14 embuscade (3 brigands, Godefroy contre un 4e) → 15 dialogue → 16 retour au château → 17 Godefroy dans la cour → 18 fin
 (Une sauvegarde à l'étape 14 reprend à l'étape 13.)
+Chapitre IV « Le traître » : 18 Godefroy confie l'enquête → 19 trois témoins (Gautier, père Anselme, Mathilde)
+→ 20 se cacher dans les buissons près de la croix (saut à 22 h 30, brume) → 21 rencontre Aymeric / le Borgne
+→ 22 filature (repéré si à moins de 13 m quand il se retourne, ou à moins de 3,5 m ; perdu au-delà de 34 m)
+→ 23 dénoncer à Godefroy → combat contre Aymeric → saut au petit matin → 24 fin du chapitre IV.
+(Une sauvegarde aux étapes 21-22 reprend à l'étape 20.)
 Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 
 ## Cheval
@@ -72,9 +79,11 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Chapitre III : escorte, embuscade, combat contre plusieurs ennemis
 - [x] Musique, ambiance sonore, village vivant
 - [x] Menu pause, réglages, carte
+- [x] Jour/nuit et météo
+- [x] Chapitre IV : enquête, filature, traître démasqué
 - [x] Graphismes « For Honor » : lumière, matériaux, armures
 - [ ] Vrais modèles 3D et animations (Mixamo) pour aller plus loin
 - [ ] Caméra qui évite de traverser les murs
 - [ ] Intérieurs des bâtiments
-- [ ] Chapitre IV : qui a renseigné les brigands ? (enquête) puis la cour du comte à la Pentecôte
+- [ ] Chapitre V : la route de la Pentecôte (le Borgne attend), puis l'adoubement à la cour du comte
 - [ ] Adoubement (fin du jeu)

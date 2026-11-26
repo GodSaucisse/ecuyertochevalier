@@ -1,29 +1,31 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js?v=202611261121';
-import { Player } from './player.js?v=202611261121';
-import { Input } from './input.js?v=202611261121';
-import { UI } from './ui.js?v=202611261121';
-import { createNPCs } from './npcs.js?v=202611261121';
-import { QuestManager } from './quests.js?v=202611261121';
-import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261121';
-import { createEnvironment } from './sky.js?v=202611261121';
-import { createPostFX } from './postfx.js?v=202611261121';
-import { createGrass } from './grass.js?v=202611261121';
-import { createParticles } from './particles.js?v=202611261121';
-import { Duel } from './duel.js?v=202611261121';
-import { Battle } from './battle.js?v=202611261121';
-import { loadSave, writeSave, clearSave } from './save.js?v=202611261121';
-import { Horse } from './horse.js?v=202611261121';
-import { createCourse } from './course.js?v=202611261121';
-import { createLife } from './life.js?v=202611261121';
-import { createChapter3 } from './chapter3.js?v=202611261121';
-import { STABLE_HORSE } from './layout.js?v=202611261121';
-import { createSword } from './humanoid.js?v=202611261121';
-import { Music } from './music.js?v=202611261121';
-import { Ambience } from './ambience.js?v=202611261121';
-import { loadSettings, saveSettings } from './settings.js?v=202611261121';
-import { drawMap } from './map.js?v=202611261121';
+import { buildWorld } from './world.js?v=202611261148';
+import { Player } from './player.js?v=202611261148';
+import { Input } from './input.js?v=202611261148';
+import { UI } from './ui.js?v=202611261148';
+import { createNPCs } from './npcs.js?v=202611261148';
+import { QuestManager } from './quests.js?v=202611261148';
+import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261148';
+import { createEnvironment } from './sky.js?v=202611261148';
+import { createPostFX } from './postfx.js?v=202611261148';
+import { createGrass } from './grass.js?v=202611261148';
+import { createParticles } from './particles.js?v=202611261148';
+import { Duel } from './duel.js?v=202611261148';
+import { Battle } from './battle.js?v=202611261148';
+import { loadSave, writeSave, clearSave } from './save.js?v=202611261148';
+import { Horse } from './horse.js?v=202611261148';
+import { createCourse } from './course.js?v=202611261148';
+import { createLife } from './life.js?v=202611261148';
+import { createChapter3 } from './chapter3.js?v=202611261148';
+import { createChapter4 } from './chapter4.js?v=202611261148';
+import { TimeOfDay } from './timeofday.js?v=202611261148';
+import { STABLE_HORSE, HIDE } from './layout.js?v=202611261148';
+import { createSword } from './humanoid.js?v=202611261148';
+import { Music } from './music.js?v=202611261148';
+import { Ambience } from './ambience.js?v=202611261148';
+import { loadSettings, saveSettings } from './settings.js?v=202611261148';
+import { drawMap } from './map.js?v=202611261148';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -62,12 +64,14 @@ const horse = new Horse(scene, world, STABLE_HORSE);
 horse.parts.root.add(course.lance);
 const life = createLife(scene, world);
 const ch3 = createChapter3(scene, world);
+const ch4 = createChapter4(scene, world);
 if (HIGH) world.sun.shadow.mapSize.set(4096, 4096);
 scene.environment = createEnvironment(renderer, world.sunDir);
 scene.environmentIntensity = 1.0;
 const grass = createGrass(scene, world.isBare, { count: HIGH ? 120000 : 35000, radius: HIGH ? 75 : 55 });
 const particles = createParticles(scene, { dust: HIGH ? 400 : 150, leaves: HIGH ? 90 : 40 });
 const fx = createPostFX(renderer, scene, camera, { high: HIGH });
+const tod = new TimeOfDay({ scene, world, renderer, maxLights: HIGH ? 6 : 3 });
 
 // ---------- Personnages, interface, histoire ----------
 const ui = new UI(isTouch);
@@ -75,7 +79,7 @@ const input = new Input(renderer.domElement, isTouch);
 input.sens = settings.sens;
 const player = new Player(scene, world);
 const npcs = createNPCs(scene, world);
-npcs.list.push(...life.npcs);
+npcs.list.push(...life.npcs, ch4.aymeric, ch4.anselme);
 ch3.setLord(npcs.godefroy);
 ch3.placeHome();
 const quests = new QuestManager({ ui, npcs, world });
@@ -96,18 +100,18 @@ const duel = new Duel({
 quests.onStartDuel = () => duel.start(0);
 quests.duelRunning = () => duel.running;
 
-const battle = new Battle({
-  scene, camera, player, world, ui, isTouch,
-  onWin: () => {
+const battle = new Battle({ scene, camera, player, world, ui, isTouch });
+function ambushCallbacks() {
+  battle.onWin = () => {
     ch3.endSideFight(true);
     setTimeout(() => { ch3.clearSideFight(); }, 2500);
     quests.goTo(15);
     setTimeout(() => quests.afterAmbushDialog(), 1200);
-  },
-  onLose: (retry) => {
+  };
+  battle.onLose = (retry) => {
     ui.showDialog([[npcs.godefroy.name, 'Debout, écuyer ! Ils ne sont que des brigands, et tu es un homme de Montclair !']], retry);
-  },
-});
+  };
+}
 const fight = () => (duel.running ? duel : battle.running ? battle : null);
 
 // Chapitre III : événements de l'histoire
@@ -133,12 +137,67 @@ const ch3Events = {
     ui.showDialog([
       [npcs.godefroy.name, 'Halte ! Un arbre en travers de la route… C\'est un piège !'],
       [npcs.godefroy.name, 'Des brigands ! Pied à terre, écuyer, et l\'épée au clair !'],
-    ], () => battle.start(foes, { title: 'Embuscade !' }));
+    ], () => { ambushCallbacks(); battle.start(foes, { title: 'Embuscade !' }); });
   },
   home: () => {
     if (quests.step === 16) quests.goTo(17);
   },
 };
+
+// ---------- Chapitre IV ----------
+/** Fondu au noir avec un texte, pendant lequel l'heure (et la météo) changent. */
+function timeJump(hour, weather, text, after) {
+  const el = $('chapter');
+  $('chapter-title').textContent = '';
+  $('chapter-sub').textContent = text;
+  el.classList.remove('hidden');
+  el.classList.add('show');
+  setTimeout(() => {
+    tod.setTime(hour);
+    if (weather === null) { tod.lockWeather(null); tod.setWeather('clair', true); } else if (weather) tod.lockWeather(weather);
+    if (after) after();
+  }, 1100);
+  setTimeout(() => el.classList.remove('show'), 2600);
+  setTimeout(() => el.classList.add('hidden'), 3600);
+}
+const AYMERIC = ch4.aymeric.name, BORGNE = 'Le Borgne';
+const ch4Events = {
+  meeting: () => {
+    ui.showDialog([
+      [BORGNE, 'T\'es en retard, l\'intendant.'],
+      [AYMERIC, 'Les gardes changent de tour à minuit, je ne pouvais pas partir avant. Ma part, maintenant.'],
+      [BORGNE, 'Ta part ? Tes renseignements nous ont coûté trois hommes. Le gamin du seigneur se bat comme un diable.'],
+      [AYMERIC, 'Alors prenez plus d\'hommes. À la Pentecôte, Godefroy part pour la cour du comte. La route est longue…'],
+      [BORGNE, 'On y sera. Tiens, ta bourse. Et l\'écuyer… on s\'en occupera aussi.'],
+      ['', 'Le Borgne disparaît dans la forêt. L\'intendant reprend le chemin du château… Suis-le sans te faire voir !'],
+    ], () => { quests.goTo(22); ch4.beginFollow(); });
+  },
+  spotted: (when) => {
+    ui.toast(when === 'meeting' ? 'Tu as quitté ta cachette : ils t\'ont repéré ! Reviens dans les buissons.' : 'Repéré ! L\'intendant t\'a vu. Recommence depuis les buissons.', 3200);
+    restartStealth(when);
+  },
+  lost: () => {
+    ui.toast('Tu l\'as perdu de vue… Recommence depuis les buissons.', 3000);
+    restartStealth('follow');
+  },
+  reached: () => {
+    ui.showDialog([['', 'L\'intendant ouvre un coffre au pied du donjon et y cache la bourse du Borgne. Tu tiens ta preuve !']], () => quests.goTo(23));
+  },
+};
+function restartStealth(when) {
+  if (horse.mounted) { horse.setMounted(false); player.dismount(horse); }
+  player.position.set(HIDE.x, 0, HIDE.z);
+  if (when === 'meeting') ch4.startMeeting();
+  else ch4.restartFollow();
+}
+quests.onFinalFight = () => {
+  const sword = ch4.arm();
+  const a = ch4.aymeric.object.position;
+  battle.onWin = () => quests.onTraitorDefeated();
+  battle.onLose = (retry) => quests.onTraitorLost(retry);
+  battle.start([{ name: AYMERIC, h: ch4.aymeric.h, sword, spawn: { x: a.x, z: a.z }, hp: 90, speed: 1.15, damageMul: 0.9 }], { title: 'Le traître', label: 'Ne le laisse pas s\'enfuir !' });
+};
+quests.onMorning = () => timeJump(8, null, 'Au petit matin…', () => ch4.arrest());
 
 // ---------- Sauvegarde ----------
 let savedTimer = null;
@@ -148,6 +207,9 @@ function save(showIndicator = true) {
     pos: [player.position.x, player.position.z],
     horse: { x: horse.position.x, z: horse.position.z, rot: horse.heading, mounted: horse.mounted },
     rot: player.object.rotation.y,
+    hour: tod.hour,
+    weather: tod.kind,
+    weatherLocked: tod.locked,
   });
   if (ok && showIndicator) {
     const el = $('saved');
@@ -363,6 +425,8 @@ $('apply-quality').addEventListener('click', () => { save(false); location.reloa
 
 // ---------- Boucle principale ----------
 let started = false;
+let hideToastShown = false;
+let clockIn = 0;
 let autoSaveIn = 8;
 let time = 0;
 let mapRefresh = 0;
@@ -431,6 +495,26 @@ function frame() {
       checkStrike();
     }
     ch3.update(dtGame, player.position, ch3Events);
+    ch4.update(dtGame, { position: player.position, mounted: horse.mounted }, ch4Events);
+    // Chapitre IV : arrivée dans la cachette
+    if (quests.step === 20 && !ui.dialogOpen && Math.hypot(player.position.x - HIDE.x, player.position.z - HIDE.z) < 2.5) {
+      if (horse.mounted) {
+        if (!hideToastShown) { ui.toast('Descends de cheval pour te cacher dans les buissons.', 2500); hideToastShown = true; }
+      } else {
+        quests.goTo(21);
+        if (tod.night < 0.7) timeJump(22.5, 'brume', 'À la nuit tombée…', () => ch4.startMeeting());
+        else { tod.lockWeather('brume'); ch4.startMeeting(); }
+      }
+    }
+    // Interface de discrétion (filature)
+    const si = ch4.stealthInfo();
+    $('stealth').classList.toggle('hidden', !si.active);
+    if (si.active) {
+      $('stealth-fill').style.width = Math.min(100, si.meter * 100) + '%';
+      $('stealth').classList.toggle('warn', si.warn);
+      $('stealth').classList.toggle('looking', si.looking);
+      $('stealth-label').textContent = si.looking ? '👁 Il regarde derrière lui !' : si.warn ? '👁 Il va se retourner…' : '👁 Discrétion';
+    }
 
     // Invite "Parler" / "Monter"
     const near = ui.dialogOpen || f ? null : nearestNPC();
@@ -465,7 +549,7 @@ function frame() {
     // Musique et ambiance
     music.setMood(f ? 'combat' : 'explore');
     ambience.quiet = !!f;
-    ambience.update(dt, player.position);
+    ambience.update(dt, player.position, { night: tod.night, rain: tod.rainAmount });
 
     // Sauvegarde discrète de la position toutes les 8 secondes
     autoSaveIn -= dt;
@@ -476,7 +560,10 @@ function frame() {
   }
 
   for (const n of npcs.list) if (!n.inCombat && n.id !== 'forgeron' && n.id !== 'villageois') n.update(dt, player.position);
-  life.update(dt, player.position);
+  life.update(dt, player.position, tod.night);
+  tod.update(dt, camera.position);
+  clockIn -= dt;
+  if (clockIn < 0) { clockIn = 0.5; $('clock').textContent = tod.label(); }
   course.update(dt);
   updateCamera(dt, look);
   world.update(dt, player.position, camera.position);
@@ -507,6 +594,11 @@ function beginPlay(message) {
 function restoreWorld(data) {
   let step = data.step;
   if (step === 14) step = 13; // une embuscade interrompue recommence au départ de l'escorte
+  if (step === 21 || step === 22) step = 20; // la rencontre nocturne recommence dans les buissons
+  if (typeof data.hour === 'number') tod.setTime(data.hour);
+  if (data.weather) { if (data.weatherLocked) tod.lockWeather(data.weather); else tod.setWeather(data.weather, true); }
+  ch4.placeForStep(step);
+  if (step === 23 && tod.night < 0.5) { tod.setTime(22.5); tod.lockWeather('brume'); }
   quests.restore({ ...data, step });
   if (step >= 13) player.setSword(createSword(false));
   if (data.horse) {
@@ -554,4 +646,4 @@ $('start').addEventListener('click', () => {
 });
 
 // Accès pour le débogage depuis la console du navigateur
-window.game = { player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, life, music, openPause, closePause };
+window.game = { player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, tod, life, music, openPause, closePause };

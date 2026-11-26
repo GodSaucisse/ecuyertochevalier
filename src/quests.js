@@ -1,6 +1,7 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
 import * as THREE from 'three';
-import { playSuccess } from './audio.js?v=202611261121';
+import { HIDE } from './layout.js?v=202611261148';
+import { playSuccess } from './audio.js?v=202611261148';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -15,6 +16,7 @@ export class QuestManager {
     this.mathildeIndex = 0;
     this.gateIndex = 0;
     this.joustHits = 0;
+    this.clues = {};
     this.refresh();
   }
 
@@ -40,6 +42,19 @@ export class QuestManager {
       case 13: return this.npcs.godefroy.inCombat ? { position: this.npcs.godefroy.object.position, markerHeight: 3.3 } : this.npcs.godefroy;
       case 16: return { position: this.npcs.godefroy.object.position, markerHeight: 3.3 };
       case 17: return this.npcs.godefroy;
+      case 18: return this.npcs.godefroy;
+      case 19: {
+        // Le témoin le plus proche qu'on n'a pas encore interrogé
+        const order = [['gautier', this.npcByName('forgeron')], ['anselme', this.npcByName('anselme')], ['mathilde', this.npcs.mathilde]];
+        const next = order.find(([k, n]) => !this.clues[k] && n);
+        return next ? next[1] : null;
+      }
+      case 20: return { position: new THREE.Vector3(HIDE.x, 0, HIDE.z), markerHeight: 2.2 };
+      case 22: {
+        const a = this.npcByName('aymeric');
+        return a ? { position: a.object.position, markerHeight: 2.6 } : null;
+      }
+      case 23: return this.npcs.godefroy;
       default: return null;
     }
   }
@@ -65,7 +80,13 @@ export class QuestManager {
       case 15: ui.setQuest('Chapitre III · L\'embuscade', 'Parle à Sire Godefroy.'); break;
       case 16: ui.setQuest('Chapitre III · L\'embuscade', 'Rentre au château avec Sire Godefroy.'); break;
       case 17: ui.setQuest('Chapitre III · L\'embuscade', 'Parle à Sire Godefroy dans la cour.'); break;
-      default: ui.setQuest('Fin du chapitre III', 'Explore librement Montclair. La suite arrive bientôt !');
+      case 18: ui.setQuest('Chapitre IV · Le traître', 'Sire Godefroy veut te parler, dans la cour du château.'); break;
+      case 19: ui.setQuest('Chapitre IV · Le traître', `Interroge Gautier le forgeron, le père Anselme (à l'église) et Mathilde (au puits) : ${Object.keys(this.clues).length}/3.`); break;
+      case 20: ui.setQuest('Chapitre IV · Le traître', 'Va te cacher dans les buissons près de la vieille croix de pierre, à l\'ouest, et attends la nuit.'); break;
+      case 21: ui.setQuest('Chapitre IV · Le traître', 'Reste caché dans les buissons et écoute…'); break;
+      case 22: ui.setQuest('Chapitre IV · Le traître', 'Suis l\'intendant jusqu\'au château sans te faire repérer. Quand il se retourne (👁), recule ou reste loin !'); break;
+      case 23: ui.setQuest('Chapitre IV · Le traître', 'Dénonce l\'intendant à Sire Godefroy, dans la cour.'); break;
+      default: ui.setQuest('Fin du chapitre IV', 'Explore librement Montclair. La suite arrive bientôt !');
     }
   }
 
@@ -98,6 +119,25 @@ export class QuestManager {
       this.goTo(16);
       if (this.onReturn) this.onReturn();
     });
+  }
+
+  /** Fin du chapitre IV, après la victoire contre l'intendant. */
+  onTraitorDefeated() {
+    const N = this.npcs.godefroy.name;
+    this.ui.showDialog([
+      [N, 'Enchaînez-le ! … Tu as démasqué un traître sous mon propre toit, écuyer.'],
+      [N, 'Mais le Borgne court toujours, et il sait que je pars à la Pentecôte. Cette fois, c\'est nous qui l\'attendrons.'],
+      [N, 'Va dormir. Tu l\'as bien mérité.'],
+    ], () => {
+      if (this.onMorning) this.onMorning();
+      playSuccess();
+      this.goTo(24);
+      setTimeout(() => this.ui.toast('Fin du chapitre IV. La suite arrive bientôt !', 5000), 2500);
+    });
+  }
+
+  onTraitorLost(retry) {
+    this.ui.showDialog([[this.npcs.godefroy.name, 'Relève-toi, écuyer ! Ne le laisse pas s\'enfuir !']], retry);
   }
 
   onMounted() {
@@ -144,8 +184,10 @@ export class QuestManager {
     }
   }
 
+  npcByName(id) { return this.npcs.list.find((n) => n.id === id); }
+
   serialize() {
-    return { step: this.step, hits: this.hits, mathildeIndex: this.mathildeIndex, gateIndex: this.gateIndex, joustHits: this.joustHits };
+    return { step: this.step, hits: this.hits, mathildeIndex: this.mathildeIndex, gateIndex: this.gateIndex, joustHits: this.joustHits, clues: this.clues };
   }
 
   restore(data) {
@@ -154,6 +196,7 @@ export class QuestManager {
     this.mathildeIndex = data.mathildeIndex ?? 0;
     this.gateIndex = data.gateIndex ?? 0;
     this.joustHits = data.joustHits ?? 0;
+    this.clues = data.clues || {};
     this.placeNPCs();
     if (this.course) this.course.setActiveGate(this.step === 8 ? this.gateIndex : -1);
     this.refresh();
@@ -185,6 +228,60 @@ export class QuestManager {
   talkTo(npc) {
     const ui = this.ui;
     const N = npc.name;
+    // Chapitre IV : les témoins
+    if (this.step === 19) {
+      const clue = {
+        forgeron: ['gautier', [
+          'Aymeric ? Il est passé à la forge la veille de votre départ. Il voulait savoir quel jour je devais ferrer le cheval du seigneur.',
+          '« Pour les comptes », qu\'il disait. Drôle de question pour un homme qui compte des pièces, pas des fers.',
+        ]],
+        anselme: ['anselme', [
+          'Je ne devrais pas colporter de ragots, mon fils… Mais avant-hier, au crépuscule, j\'ai vu une lanterne près de la vieille croix de pierre, à l\'ouest.',
+          'Qui irait prier là-bas, à la nuit tombée ? Personne d\'honnête, je le crains.',
+        ]],
+        mathilde: ['mathilde', [
+          'L\'intendant ? Je l\'ai vu rentrer de la forêt à la tombée du jour, avec une bourse bien pleine à la ceinture.',
+          'Il m\'a donné une pièce pour que je me taise… Oh ! Je n\'aurais pas dû dire ça.',
+        ]],
+      }[npc.id];
+      if (clue) {
+        const [key, lines] = clue;
+        const fresh = !this.clues[key];
+        ui.showDialog(lines.map((t) => [N, t]), () => {
+          if (!fresh) return;
+          this.clues[key] = true;
+          playSuccess();
+          if (Object.keys(this.clues).length >= 3) {
+            ui.showDialog([['', 'Tout mène à la vieille croix de pierre, à l\'ouest. Si l\'intendant y retourne, ce sera à la nuit tombée… Va te cacher dans les buissons tout près.']], () => this.goTo(20));
+          } else {
+            ui.toast(`Indice trouvé (${Object.keys(this.clues).length}/3)`, 2000);
+            this.refresh();
+            if (this.onChange) this.onChange();
+          }
+        });
+        return;
+      }
+      if (npc.id === 'aymeric') {
+        ui.showDialog([[N, 'Des questions ? Je suis fort occupé, écuyer. Les comptes du château ne se font pas tout seuls.']]);
+        return;
+      }
+      if (npc.id === 'bertrand') {
+        ui.showDialog([[N, 'Moi ? J\'étais à l\'entraînement avec toi, ce jour-là. Mais méfie-toi de ceux qui comptent l\'argent du seigneur…']]);
+        return;
+      }
+    }
+    if (npc.id === 'aymeric') {
+      ui.showDialog([[N, this.step < 19
+        ? 'Je tiens les comptes du château. Le seigneur dépense bien trop en chevaux, si tu veux mon avis.'
+        : 'Laisse-moi, écuyer. J\'ai du travail.']]);
+      return;
+    }
+    if (npc.id === 'anselme') {
+      const lines = ['Que Dieu te garde, mon fils.', 'La messe est à l\'aube. Un futur chevalier doit avoir l\'âme aussi propre que son épée.', 'Prie pour la récolte, et pour la paix sur nos routes.'];
+      npc.lineIndex = (npc.lineIndex ?? -1) + 1;
+      ui.showDialog([[N, lines[npc.lineIndex % lines.length]]]);
+      return;
+    }
     // Personnages secondaires : répliques qui tournent
     if (npc.lines) {
       npc.lineIndex = (npc.lineIndex ?? -1) + 1;
@@ -246,10 +343,24 @@ export class QuestManager {
         ], () => {
           playSuccess();
           this.goTo(18);
-          this.ui.toast('Fin du chapitre III. La suite arrive bientôt !', 5000);
+          if (this.onChapter) this.onChapter('Chapitre IV', 'Le traître');
         });
-      } else if (this.step >= 18) {
-        ui.showDialog([[N, 'La Pentecôte approche, écuyer. Tiens-toi prêt.']]);
+      } else if (this.step === 18) {
+        ui.showDialog([
+          [N, 'Approche, écuyer. Ces brigands savaient tout : le jour, l\'heure, la route. Quelqu\'un les a renseignés.'],
+          [N, 'Peu de gens connaissaient notre départ. Gautier, qui a ferré nos chevaux. Le père Anselme, qui a béni la route. Et Aymeric, mon intendant.'],
+          [N, 'Interroge Gautier, le père Anselme… et Mathilde, qui voit tout depuis son puits. Discrètement. Je ne veux accuser personne sans preuve.'],
+        ], () => this.goTo(19));
+      } else if (this.step >= 19 && this.step <= 22) {
+        ui.showDialog([[N, 'Alors, cette enquête ? Sois prudent, écuyer. Un traître acculé est dangereux.']]);
+      } else if (this.step === 23) {
+        ui.showDialog([
+          [N, 'Aymeric ?! Mon intendant depuis dix ans… Une bourse de brigand dans son coffre ?'],
+          [N, 'Gardes ! Qu\'on l\'arrête sur-le-champ !'],
+          ['Aymeric, l\'intendant', 'Jamais ! Écarte-toi, écuyer, ou je te passe au fil de l\'épée !'],
+        ], () => { if (this.onFinalFight) this.onFinalFight(); });
+      } else if (this.step >= 24) {
+        ui.showDialog([[N, 'Grâce à toi, Montclair dort tranquille… pour l\'instant. La Pentecôte approche.']]);
       } else {
         ui.showDialog([[N, 'Bertrand t\'attend. Ne fais pas attendre un homme qui manie l\'épée mieux que toi.']]);
       }

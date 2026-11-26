@@ -1,8 +1,8 @@
 // La vie du village : forge et forgeron, villageois qui se promènent, poules.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk } from './humanoid.js?v=202611261121';
-import { Tex, metricBoxUV } from './textures.js?v=202611261121';
-import { atDistance, playAnvil, playCluck } from './audio.js?v=202611261121';
+import { createHumanoid, animateWalk } from './humanoid.js?v=202611261148';
+import { Tex, metricBoxUV } from './textures.js?v=202611261148';
+import { atDistance, playAnvil, playCluck } from './audio.js?v=202611261148';
 
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
@@ -182,8 +182,15 @@ export function createLife(scene, world) {
 
   return {
     npcs,
-    update(dt, playerPos) {
-      for (const n of npcs) n.update(dt, playerPos);
+    update(dt, playerPos, night = 0) {
+      // La nuit, les villageois et les poules sont rentrés
+      const home = night > 0.6;
+      for (const n of npcs) {
+        n.object.visible = !home;
+        if (!home) n.update(dt, playerPos);
+      }
+      for (const c of chickens) c.g.visible = !home;
+      if (home) return;
       for (const c of chickens) {
         const p = c.g.position;
         // Les poules s'écartent quand on s'approche

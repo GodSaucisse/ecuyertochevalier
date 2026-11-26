@@ -27,6 +27,15 @@ export const ROAD = [
 ];
 export const AMBUSH = { x: -55, z: -54, r: 10 };
 
+/** Chapitre IV : la vieille croix de pierre, les buissons où se cacher, et le chemin de l'intendant. */
+export const CROSS = { x: -44, z: 24 };
+export const HIDE = { x: -38.5, z: 29.5 };
+export const BORGNE_FROM = { x: -64, z: 16 };
+export const STEWARD_PATH = [
+  { x: -43, z: 23 }, { x: -36, z: 14 }, { x: -26, z: -4 }, { x: -11, z: -16 },
+  { x: 0, z: -17 }, { x: 0, z: -24 }, { x: 3, z: -28 }, { x: 4, z: -38 }, { x: 3.5, z: -39.5 },
+];
+
 /** Distance d'un point à un segment, au sol. */
 export function distToSegment(px, pz, ax, az, bx, bz) {
   const dx = bx - ax, dz = bz - az;
@@ -44,6 +53,11 @@ export function onCourse(x, z, margin = 4.5) {
   }
   if (distToSegment(x, z, prev.x, prev.z, LISTS.x, LISTS.z1) < margin) return true;
   if (onRoad(x, z, margin)) return true;
+  if (Math.hypot(x - CROSS.x, z - CROSS.z) < 9 || Math.hypot(x - HIDE.x, z - HIDE.z) < 4) return true;
+  for (let i = 1; i < 4; i++) {
+    const a = STEWARD_PATH[i - 1], b = STEWARD_PATH[i];
+    if (distToSegment(x, z, a.x, a.z, b.x, b.z) < 3) return true;
+  }
   if (Math.hypot(x - AMBUSH.x, z - AMBUSH.z) < AMBUSH.r + 2) return true;
   return Math.abs(x - LISTS.x) < LISTS.halfWidth + 6 && z > LISTS.z0 - 5 && z < LISTS.z1 + 8;
 }
