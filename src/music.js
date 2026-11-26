@@ -1,7 +1,7 @@
 // Musique médiévale composée en direct par le jeu (aucun fichier audio).
-// Mode dorien de ré, luth en arpèges, flûte à bec, bourdon façon vielle à roue,
-// et tambour pour les combats. La mélodie varie à chaque reprise.
-import { audio } from './audio.js?v=202611261106';
+// Mode dorien de ré, flûte à bec seule (plus rapide pendant les combats).
+// La mélodie varie à chaque reprise.
+import { audio } from './audio.js?v=202611261111';
 
 const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const DORIAN = [0, 2, 3, 5, 7, 9, 10];
@@ -45,24 +45,6 @@ export class Music {
     this.out = ctx.createGain();
     this.out.gain.value = 0.9;
     this.out.connect(audio.music);
-    // Bourdon (vielle à roue) : ré grave + la, filtré
-    this.drone = ctx.createGain();
-    this.drone.gain.value = 0;
-    const lp = ctx.createBiquadFilter();
-    lp.type = 'lowpass';
-    lp.frequency.value = 520;
-    this.droneFilter = lp;
-    for (const m of [38, 45, 50]) {
-      const o = ctx.createOscillator();
-      o.type = 'sawtooth';
-      o.frequency.value = midiToFreq(m);
-      o.detune.value = (Math.random() - 0.5) * 8;
-      const g = ctx.createGain();
-      g.gain.value = m === 50 ? 0.25 : 0.4;
-      o.connect(g).connect(lp);
-      o.start();
-    }
-    lp.connect(this.drone).connect(this.out);
     this.nextTime = ctx.currentTime + 0.3;
     this.newPhrases();
     this.timer = setInterval(() => this.tick(), 50);
@@ -131,11 +113,6 @@ export class Music {
         this.mood = 'combat'; this.step = 0; this.newPhrases();
       }
     }
-    // Volume du bourdon selon l'humeur
-    const t = ctx.currentTime;
-    const droneVol = this.mood === 'combat' ? 0.07 : this.mood === 'silence' ? 0 : 0.035;
-    this.drone.gain.setTargetAtTime(droneVol, t, 0.8);
-    this.droneFilter.frequency.setTargetAtTime(this.mood === 'combat' ? 900 : 520, t, 0.8);
   }
 
   schedule(step, t) {
@@ -149,12 +126,7 @@ export class Music {
     // Toutes les 4 reprises, une respiration : seulement luth et bourdon
     const breathe = !combat && this.loop % 4 === 3;
 
-    // Luth : arpège
-    const pattern = combat ? [0, 4, 7, 0, 4, 7] : [0, 4, 7, 2, 4, 7, 2, 4];
-    const lutePitch = degree(root + pattern[inBar], 50);
-    if (!breathe || inBar % 2 === 0) this.pluck(midiToFreq(lutePitch), t, inBar === 0 ? 0.22 : 0.14);
-
-    // Mélodie
+    // Seulement la flûte (le luth, le bourdon et les percussions ont été retirés à la demande du joueur)
     if (!breathe) {
       const phrase = this.phrases[Math.floor(bar / 2) % 4];
       const posInPhrase = (bar % 2) * barLen + inBar;
@@ -162,17 +134,8 @@ export class Music {
       if (n && !n.rest) {
         const f = midiToFreq(degree(n.d));
         const dur = n.len * this.stepDur * 0.95;
-        if (combat) this.fiddle(f, t, dur, 0.09);
-        else this.recorder(f, t, dur, 0.085);
+        this.recorder(f, t, dur, combat ? 0.1 : 0.09);
       }
-    }
-
-    // Percussions
-    if (combat) {
-      if (inBar === 0 || inBar === 3) this.drum(t, inBar === 0 ? 1 : 0.7);
-      else this.tek(t, 0.5);
-    } else if (!breathe && inBar === 0 && bar % 2 === 0) {
-      this.drum(t, 0.35);
     }
   }
 

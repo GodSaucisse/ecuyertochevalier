@@ -1,5 +1,5 @@
 // Ambiance sonore : vent, oiseaux, cloche de l'église.
-import { audio, atDistance, playBell } from './audio.js?v=202611261106';
+import { audio, atDistance, playBell } from './audio.js?v=202611261111';
 
 const CHURCH_BELL = { x: -20, z: -1.8 };
 
@@ -18,14 +18,15 @@ export class Ambience {
     // Vent : bruit filtré en boucle, qui souffle par vagues
     const buf = ctx.createBuffer(1, ctx.sampleRate * 4, ctx.sampleRate);
     const d = buf.getChannelData(0);
-    let last = 0;
-    for (let i = 0; i < d.length; i++) { last = last * 0.98 + (Math.random() * 2 - 1) * 0.02; d[i] = last * 6; }
+    // Bruit blanc : la boucle se raccorde sans « tic » (le filtre en fait un souffle doux)
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.35;
     const src = ctx.createBufferSource();
     src.buffer = buf;
     src.loop = true;
     const lp = ctx.createBiquadFilter();
     lp.type = 'lowpass';
-    lp.frequency.value = 500;
+    lp.frequency.value = 400;
+    lp.Q.value = 0.3;
     this.windGain = ctx.createGain();
     this.windGain.gain.value = 0.05;
     src.connect(lp).connect(this.windGain).connect(audio.ambience);
