@@ -149,9 +149,9 @@ export class Input {
     return { x: 0, y: 0 };
   }
 
-  /** Parade maintenue (Maj, ou bouton 🛡 sur mobile). */
+  /** Parade maintenue (E ou Maj, ou bouton 🛡 sur mobile). */
   get blockHeld() {
-    return this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || !!this.touchBlock;
+    return this.keys.has('KeyE') || this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || !!this.touchBlock;
   }
 
   get run() {

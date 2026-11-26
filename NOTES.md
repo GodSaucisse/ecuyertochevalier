@@ -44,7 +44,7 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `chapter4.js` : croix de pierre, buissons, Aymeric l'intendant (le traître), père Anselme, le Borgne, lanterne, rencontre nocturne et filature.
 
 ## Combat (version simple, demandée par le créateur)
-- Pas de directions. Clic gauche = coup léger, clic droit = coup lourd, Maj (maintenir) = parer, Espace = esquiver, Tab = changer de cible.
+- Pas de directions. Clic gauche = coup léger, clic droit = coup lourd, E (maintenir, ou Maj) = parer — E par défaut car 5 appuis sur Maj ouvrent les « touches rémanentes » de Windows, Espace = esquiver, Tab = changer de cible.
 - Mobile : ⚔️ léger, 💥 lourd, 🛡 parer (maintenir), ↶ esquive, 🎯 cible.
 - Parer bloque tout mais coûte de l'endurance (léger 5, lourd 15) ; à 0 → garde brisée (étourdi). Endurance : remonte deux fois moins vite garde levée.
 - Parade parfaite : garde levée moins de 0,3 s avant l'impact (0,5 s pendant la leçon) → l'attaquant est déséquilibré.

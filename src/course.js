@@ -1,8 +1,8 @@
 // Chapitre II : parcours de portes à bannières et lice de joute.
 import * as THREE from 'three';
-import { Tex, metricBoxUV } from './textures.js?v=202611261148';
-import { GATES, LISTS, JOUST_QUINTAIN } from './layout.js?v=202611261148';
-import { createHumanoid } from './humanoid.js?v=202611261148';
+import { Tex, metricBoxUV } from './textures.js?v=202611261206';
+import { GATES, LISTS, JOUST_QUINTAIN } from './layout.js?v=202611261206';
+import { createHumanoid } from './humanoid.js?v=202611261206';
 
 function mat(color, extra = {}) {
   return new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });

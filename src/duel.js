@@ -1,8 +1,8 @@
 // Duel d'entraînement contre Bertrand : leçons (bloquer, toucher, parer) puis duel libre.
 import * as THREE from 'three';
-import { Fighter } from './combat.js?v=202611261148';
-import { createSword, animateWalk } from './humanoid.js?v=202611261148';
-import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611261148';
+import { Fighter } from './combat.js?v=202611261206';
+import { createSword, animateWalk } from './humanoid.js?v=202611261206';
+import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611261206';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -13,7 +13,7 @@ const REACH = 2.7;
 const KEEP_DIST = 2.0;
 
 function phases(isTouch) {
-  const block = isTouch ? 'maintiens 🛡' : 'maintiens Maj';
+  const block = isTouch ? 'maintiens 🛡' : 'maintiens E';
   const attacks = isTouch ? '⚔️ coup léger, 💥 coup lourd' : 'clic gauche = coup léger, clic droit = coup lourd';
   return [
     {
@@ -30,7 +30,7 @@ function phases(isTouch) {
     },
     {
       id: 'free', title: 'Duel', goal: null, enemySpeed: 1.2,
-      text: `Bats Bertrand ! Pare (${isTouch ? '🛡' : 'Maj'}), esquive (${isTouch ? '↶' : 'Espace'}) et surveille ton endurance (barre bleue) : parer la fatigue aussi.`,
+      text: `Bats Bertrand ! Pare (${isTouch ? '🛡' : 'E'}), esquive (${isTouch ? '↶' : 'Espace'}) et surveille ton endurance (barre bleue) : parer la fatigue aussi.`,
     },
   ];
 }

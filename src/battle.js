@@ -2,10 +2,10 @@
 // Reprend les règles et l'interface du duel, avec une cible verrouillée
 // que l'on peut changer (Tab / 🎯).
 import * as THREE from 'three';
-import { Duel, setThreat } from './duel.js?v=202611261148';
-import { Fighter } from './combat.js?v=202611261148';
-import { animateWalk } from './humanoid.js?v=202611261148';
-import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261148';
+import { Duel, setThreat } from './duel.js?v=202611261206';
+import { Fighter } from './combat.js?v=202611261206';
+import { animateWalk } from './humanoid.js?v=202611261206';
+import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261206';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -125,7 +125,7 @@ export class Battle extends Duel {
 
   updateTuto() {
     const n = this.alive.length;
-    const hint = this.isTouch ? '🛡 parer · ↶ esquiver · 🎯 changer de cible.' : 'Maj : parer · Espace : esquiver · Tab : changer de cible.';
+    const hint = this.isTouch ? '🛡 parer · ↶ esquiver · 🎯 changer de cible.' : 'E : parer · Espace : esquiver · Tab : changer de cible.';
     $('tuto-text').textContent = this.label
       ? `${this.label} ${hint.replace(/ · (Tab|🎯)[^.]*\./, '.')}`
       : `Brigands restants : ${n}. Garde un œil sur les autres ! ${hint}`;
