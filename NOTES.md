@@ -95,6 +95,11 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - Quand on parle à un PNJ qui n'est pas l'objectif de l'histoire, main.js (talkTo) propose d'abord les options des activités.
 - Tutoriel (tutorial.js) : conseils au début d'une nouvelle partie (une seule fois, mémorisé dans localStorage).
 
+## Héros, combat à cheval, tournoi
+- hero.js : écran de création (nom, teint, cheveux, barbe, blason : champ, couleur du motif, motif parmi 9). Ouvert pour une nouvelle partie et depuis l'onglet « Héros » de la pause. Sauvegardé dans `hero`. Le blason est dessiné par drawArms (textures.js) : écu, manteau (couleur du champ) et caparaçon de Tonnerre. Le nom est utilisé à l'adoubement, à l'écran de fin et par le héraut.
+- mounted.js : coups d'épée à cheval (clic gauche/droit, dégâts selon la vitesse), mannequins d'entraînement en x = 44.5 (z -8 à 19), et EnemyRider (chevalier ennemi monté).
+- tournament.js : à partir de l'étape 28, le héraut près de la lice (51.5, -25.5). Joute (barrière en x = 58, 3 passes, clic au bon moment = coup parfait, E = se protéger), mêlée à cheval (3 chevaliers, 2 attaquent à la fois), finale à pied (Battle contre Sire Raimbaud le Noir, 170 PV). Récompenses 40/60/100 deniers (puis 1/4). Sauvegardé dans `tour`.
+
 ## Avancement
 - [x] Chapitre I : arrivée, rencontre avec le seigneur, entraînement à la quintaine, duel d'entraînement.
 - [x] Combat à la For Honor
@@ -113,3 +118,5 @@ Bertrand change de place selon l'étape (QuestManager.placeNPCs).
 - [x] Chapitre V : la Pentecôte, le Borgne capturé, l'adoubement (fin de l'histoire)
 - [x] Quêtes secondaires, mini-jeux (tir à l'arc, dés, courses), chasse
 - [x] Finitions : bruits de pas, caméra qui évite les murs dehors, tutoriel
+- [x] Blason et création du héros, combat à cheval, tournoi de la Saint-Martin
+- [ ] Chapitre VI dans une autre région (à choisir)

@@ -1,36 +1,39 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js?v=202611261414';
-import { Player } from './player.js?v=202611261414';
-import { Input } from './input.js?v=202611261414';
-import { UI } from './ui.js?v=202611261414';
-import { createNPCs } from './npcs.js?v=202611261414';
-import { QuestManager } from './quests.js?v=202611261414';
-import { initAudio, playHit, playSwing, playLanceHit, setVolumes, playStep } from './audio.js?v=202611261414';
-import { Activities } from './activities.js?v=202611261414';
-import { Tutorial } from './tutorial.js?v=202611261414';
-import { createEnvironment } from './sky.js?v=202611261414';
-import { createPostFX } from './postfx.js?v=202611261414';
-import { createGrass } from './grass.js?v=202611261414';
-import { createParticles } from './particles.js?v=202611261414';
-import { Duel } from './duel.js?v=202611261414';
-import { Battle } from './battle.js?v=202611261414';
-import { loadSave, writeSave, clearSave } from './save.js?v=202611261414';
-import { Horse } from './horse.js?v=202611261414';
-import { createCourse } from './course.js?v=202611261414';
-import { createLife } from './life.js?v=202611261414';
-import { createChapter3 } from './chapter3.js?v=202611261414';
-import { createChapter4 } from './chapter4.js?v=202611261414';
-import { createInteriors, ROOMS } from './interiors.js?v=202611261414';
-import { createChapter5 } from './chapter5.js?v=202611261414';
-import { Economy } from './economy.js?v=202611261414';
-import { TimeOfDay } from './timeofday.js?v=202611261414';
-import { STABLE_HORSE, HIDE } from './layout.js?v=202611261414';
-import { createSword } from './humanoid.js?v=202611261414';
-import { Music } from './music.js?v=202611261414';
-import { Ambience } from './ambience.js?v=202611261414';
-import { loadSettings, saveSettings } from './settings.js?v=202611261414';
-import { drawMap } from './map.js?v=202611261414';
+import { buildWorld } from './world.js?v=202611261508';
+import { Player } from './player.js?v=202611261508';
+import { Input } from './input.js?v=202611261508';
+import { UI } from './ui.js?v=202611261508';
+import { createNPCs } from './npcs.js?v=202611261508';
+import { QuestManager } from './quests.js?v=202611261508';
+import { initAudio, playHit, playSwing, playLanceHit, setVolumes, playStep } from './audio.js?v=202611261508';
+import { Activities } from './activities.js?v=202611261508';
+import { Tutorial } from './tutorial.js?v=202611261508';
+import { MountedCombat } from './mounted.js?v=202611261508';
+import { Tournament } from './tournament.js?v=202611261508';
+import { openCreator, defaultHero, fieldColor, drawShield } from './hero.js?v=202611261508';
+import { createEnvironment } from './sky.js?v=202611261508';
+import { createPostFX } from './postfx.js?v=202611261508';
+import { createGrass } from './grass.js?v=202611261508';
+import { createParticles } from './particles.js?v=202611261508';
+import { Duel } from './duel.js?v=202611261508';
+import { Battle } from './battle.js?v=202611261508';
+import { loadSave, writeSave, clearSave } from './save.js?v=202611261508';
+import { Horse } from './horse.js?v=202611261508';
+import { createCourse } from './course.js?v=202611261508';
+import { createLife } from './life.js?v=202611261508';
+import { createChapter3 } from './chapter3.js?v=202611261508';
+import { createChapter4 } from './chapter4.js?v=202611261508';
+import { createInteriors, ROOMS } from './interiors.js?v=202611261508';
+import { createChapter5 } from './chapter5.js?v=202611261508';
+import { Economy } from './economy.js?v=202611261508';
+import { TimeOfDay } from './timeofday.js?v=202611261508';
+import { STABLE_HORSE, HIDE } from './layout.js?v=202611261508';
+import { createSword } from './humanoid.js?v=202611261508';
+import { Music } from './music.js?v=202611261508';
+import { Ambience } from './ambience.js?v=202611261508';
+import { loadSettings, saveSettings } from './settings.js?v=202611261508';
+import { drawMap } from './map.js?v=202611261508';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -108,9 +111,35 @@ const activities = new Activities({ scene, world, ui, npcs, quests, economy, hor
 npcs.list.push(...activities.extraNPCs);
 activities.onCamReset = (yaw) => { cam.yaw = yaw; };
 const tutorial = new Tutorial(isTouch);
+
+// ---------- Héros, combat à cheval et tournoi ----------
+let hero = defaultHero();
+function applyHero(h) {
+  hero = h;
+  activities.stowBow();
+  player.setHero({ ...h, cloakColor: fieldColor(h) });
+  horse.setBlanket(fieldColor(h));
+}
+function fadeTo(fn, text) {
+  $('fade').classList.add('on');
+  setTimeout(() => {
+    fn();
+    if (text) ui.toast(text, 1800);
+    setTimeout(() => $('fade').classList.remove('on'), 120);
+  }, 420);
+}
+const mounted = new MountedCombat(scene, world);
+mounted.addDummies([{ x: 44.5, z: -8 }, { x: 44.5, z: 1 }, { x: 44.5, z: 10 }, { x: 44.5, z: 19 }]);
+mounted.onDummyHit = (dmg) => ui.toast(dmg > 15 ? 'Coup puissant !' : 'Touché !', 700);
+const tournament = new Tournament({
+  scene, world, ui, quests, economy, horse, player, course, mounted, battle: null, save: (i) => save(i),
+  hero: () => hero, fadeTo, setCam: (yaw) => { cam.yaw = yaw; },
+});
+npcs.list.push(tournament.herald);
 const GREETINGS = { tavernier: 'Qu\'est-ce que je te sers, écuyer ?', anselme: 'Oui, mon fils ?', hersende: 'Oui, écuyer ?', bertrand: 'Qu\'y a-t-il, écuyer ?' };
 /** Parler à un personnage : l'histoire d'abord, puis les activités. */
 function talkTo(npc) {
+  if (npc === tournament.herald) { tournament.talk(); return; }
   if (activities.talk(npc)) return;
   const story = quests.target === npc || (quests.step === 19 && ['forgeron', 'anselme', 'mathilde'].includes(npc.id));
   const extra = story ? null : activities.extraOptions(npc);
@@ -149,6 +178,7 @@ quests.onRematch = () => {
 quests.duelRunning = () => duel.running;
 
 const battle = new Battle({ scene, camera, player, world, ui, isTouch });
+tournament.battle = battle;
 function ambushCallbacks() {
   battle.onWin = () => {
     ch3.endSideFight(true);
@@ -284,12 +314,12 @@ const ch5Events = {
   accoladeDone: () => {
     ui.showDialog([
       [COUNT, 'Au nom de Dieu, de saint Michel et de saint Georges, je te fais chevalier. Sois preux !'],
-      [COUNT, 'Relève-toi, chevalier de Montclair !'],
+      [COUNT, `Relève-toi, Sire ${hero.name}, chevalier de Montclair !`],
     ], () => {
       ch5.rise(player);
       setTimeout(() => ui.showDialog([
-        [G, 'Voici ton manteau, aux couleurs de Montclair. Porte-le avec honneur… et voici cent deniers pour ton équipement.'],
-        [BE, 'Je savais que tu y arriverais. Enfin… je l\'espérais. Bienvenue parmi nous, Sire.'],
+        [G, 'Voici ton manteau, à tes propres couleurs. Porte-le avec honneur… et voici cent deniers pour ton équipement.'],
+        [BE, `Je savais que tu y arriverais. Enfin… je l'espérais. Bienvenue parmi nous, Sire ${hero.name}.`],
       ], () => {
         economy.give('manteau');
         economy.earn(100, ui, 'cadeau de Sire Godefroy');
@@ -325,7 +355,7 @@ function startCeremony() {
 }
 function showEnding() {
   const owned = Object.keys(economy.owned).filter((k) => k !== 'manteau').length;
-  $('ending-stats').innerHTML = `🪙 ${economy.money} deniers · ⚔️ ${owned} pièce${owned > 1 ? 's' : ''} d'équipement · 🛡 Chevalier de Montclair`;
+  $('ending-stats').innerHTML = `🪙 ${economy.money} deniers · ⚔️ ${owned} pièce${owned > 1 ? 's' : ''} d'équipement · 🛡 Sire ${hero.name}, chevalier de Montclair`;
   $('ending').classList.remove('hidden');
   ui.modalOpen = true;
   if (document.pointerLockElement) document.exitPointerLock();
@@ -353,6 +383,8 @@ function save(showIndicator = true) {
   const ok = writeSave({
     ...quests.serialize(),
     act: activities.serialize(),
+    tour: tournament.serialize(),
+    hero,
     pos: interiors.current ? [ROOMS[interiors.current].door.x, ROOMS[interiors.current].door.z] : [player.position.x, player.position.z],
     eco: economy.serialize(),
     horse: { x: horse.position.x, z: horse.position.z, rot: horse.heading, mounted: horse.mounted },
@@ -550,8 +582,24 @@ function selectTab(tab) {
   document.querySelectorAll('.tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.id === 'tab-' + tab));
   if (tab === 'carte') renderMap();
-  if (tab === 'journal') $('journal').innerHTML = activities.journalHTML();
+  if (tab === 'journal') $('journal').innerHTML = activities.journalHTML() + tournamentJournal();
+  if (tab === 'heros') renderHeroTab();
 }
+
+function tournamentJournal() {
+  if (quests.step < 28) return '';
+  const d = tournament.done;
+  const li = (ok, t) => `<li class="${ok ? 'done' : ''}">${t} — ${ok ? 'remportée ✔' : 'à disputer'}</li>`;
+  return `<h3>Tournoi de la Saint-Martin</h3><ul>${li(d.joute, 'La joute')}${li(d.melee, 'La mêlée à cheval')}${li(d.finale, 'La finale à pied')}</ul>${d.finale ? '<p>🏆 Champion du tournoi !</p>' : '<p class="muted">Le héraut du comte attend près de la lice, à l\'est.</p>'}`;
+}
+function renderHeroTab() {
+  const box = $('hero-summary');
+  box.innerHTML = `<canvas width="90" height="114"></canvas><div><b>${hero.name.replace(/[<>&]/g, '')}</b><br>${quests.step >= 28 ? 'Chevalier de Montclair' : 'Écuyer de Montclair'}${tournament.done.finale ? '<br>🏆 Champion du tournoi' : ''}</div>`;
+  drawShield(box.querySelector('canvas'), hero.arms);
+}
+$('edit-hero').addEventListener('click', () => {
+  openCreator(hero, (h) => { applyHero(h); save(false); renderHeroTab(); }, { title: 'Ton héros', button: 'Enregistrer', cancel: () => {} });
+});
 
 function renderMap() {
   world._gateIndex = quests.gateIndex;
@@ -590,7 +638,7 @@ $('to-title').addEventListener('click', () => { save(false); location.reload(); 
 $('btn-pause').addEventListener('click', () => openPause('reglages'));
 $('btn-map').addEventListener('click', () => openPause('carte'));
 window.addEventListener('keydown', (e) => {
-  if (!paused) return;
+  if (!paused || e.target.tagName === 'INPUT') return;
   if (e.code === 'Escape' || e.code === 'KeyP' || (e.code === 'KeyM' && pausedTab === 'carte')) { e.preventDefault(); closePause(); }
 });
 document.addEventListener('pointerlockchange', () => {
@@ -679,7 +727,9 @@ function frame() {
       const near = nearestNPC();
       const nearHorse = !horse.mounted && horse.position.distanceTo(player.position) < 2.6 && quests.step >= 7;
       if (horse.mounted) {
-        if (actions.interact) {
+        if (actions.attack) { if (tournament.lanceUp) tournament.couch(); else mounted.swing('light'); }
+        if (actions.heavy && !tournament.lanceUp) mounted.swing('heavy');
+        if (tournament.event) { /* pas de pied à terre pendant une épreuve */ } else if (actions.interact) {
           if (interiors.nearDoor(player.position) && Math.abs(horse.speed) < 1.5) ui.toast('Descends de cheval pour entrer.', 1800);
           else if (activities.race) { /* pas de pause pendant la course */ }
           else if (near && Math.abs(horse.speed) < 1.5) talkTo(near);
@@ -715,18 +765,22 @@ function frame() {
     }
 
     const frozen = (ui.dialogOpen && !f) || ch5.state.kneeling;
+    const blockKey = input.keys.has('KeyE') || !!input.touchBlock;
     if (f) {
       player.update(dtGame, ui.dialogOpen ? { x: 0, y: 0 } : input.move, false, cam.yaw, f.lockTarget);
       f.update(dtGame);
       horse.update(dt);
     } else if (horse.mounted) {
-      const m = frozen || activities.freezeMount ? { x: 0, y: 0 } : input.move;
+      const m = frozen || activities.freezeMount || tournament.freeze ? { x: 0, y: 0 } : input.move;
       const prev = horse.position.clone();
       tipPrev.copy(horse.lanceTip(tipNow));
       horse.update(dt, { throttle: m.y, turn: m.x, gallop: input.run });
-      const withLance = quests.step >= 9 && quests.step <= 11;
+      const withLance = (quests.step >= 9 && quests.step <= 11) || tournament.lanceUp;
       course.lance.visible = withLance;
       player.updateMounted(dt, horse, withLance);
+      mounted.armed = !!economy.owned.epee && !withLance && !activities.race;
+      mounted.blocking = !!tournament.event && blockKey;
+      mounted.update(dt, player, horse);
       if (quests.step === 8 && course.crossed(quests.gateIndex, prev, horse.position)) quests.onGatePassed();
       if (withLance) checkJoust(dt);
     } else {
@@ -741,6 +795,8 @@ function frame() {
       lastStepIdx = stepIdx;
       movedThisFrame = Math.hypot(player.position.x - before.x, player.position.z - before.z);
     }
+    tournament.blockHeld = blockKey;
+    tournament.update(dt);
     activities.update(dt, { inFight: !!f, dialogOpen: ui.dialogOpen, mounted: horse.mounted, indoor: !!interiors.current, camPitch: cam.pitch });
     tutorial.update(dt, { moved: movedThisFrame, looked: Math.abs(look.dx) + Math.abs(look.dy), nearNPC: !!nearestNPC(), dialogOpen: ui.dialogOpen });
     movedThisFrame = 0;
@@ -771,6 +827,7 @@ function frame() {
     const near = ui.dialogOpen || f ? null : nearestNPC();
     const key = isTouch ? '💬' : '[E]';
     if (ui.dialogOpen || f || ch5.state.kneeling || ch5.state.mode === 'accolade') ui.setPrompt(null);
+    else if (horse.mounted && tournament.event) ui.setPrompt(null);
     else if (horse.mounted) ui.setPrompt(near ? `${key} Parler à ${near.name}` : (Math.abs(horse.speed) < 1.5 ? `${key} Descendre de cheval` : null));
     else if (quests.step === 27 && ch5.nearKneel(player.position)) ui.setPrompt(`${key} T'agenouiller devant le comte`);
     else if (activities.hunt.nearCarcass(player.position)) ui.setPrompt(`${key} Récupérer la venaison`);
@@ -785,7 +842,7 @@ function frame() {
     else ui.setPrompt(null);
 
     // Objectif : losange + boussole
-    const target = activities.race ? activities.target : (quests.target || activities.target);
+    const target = activities.race ? activities.target : tournament.event ? null : (quests.target || tournament.target || activities.target);
     if (target && !f && !interiors.current) {
       const p = targetPosition(target);
       marker.visible = true;
@@ -868,6 +925,8 @@ function restoreWorld(data) {
   }
   if (Object.keys(economy.owned).length) player.applyEquipment(economy.owned, economy.stats());
   activities.restore(data.act);
+  tournament.restore(data.tour);
+  applyHero(data.hero || defaultHero());
   if (step === 23 && tod.night < 0.5) { tod.setTime(22.5); tod.lockWeather('brume'); }
   if (step === 26) step = 25; // la chevauchée recommence devant la porte
   ch5.placeForStep(step);
@@ -913,10 +972,14 @@ if (existing) {
 $('start').addEventListener('click', () => {
   if (existing && !confirm('Commencer une nouvelle partie ? La partie sauvegardée sera effacée.')) return;
   clearSave();
-  beginPlay('Montclair, automne 1126');
-  save(false);
-  setTimeout(() => tutorial.start(), 3200);
+  $('intro').classList.add('hidden');
+  openCreator(defaultHero(), (h) => {
+    applyHero(h);
+    beginPlay(`Montclair, automne 1126 · Bienvenue, ${h.name}`);
+    save(false);
+    setTimeout(() => tutorial.start(), 3200);
+  });
 });
 
 // Accès pour le débogage depuis la console du navigateur
-window.game = { activities, tutorial, player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, ch5, tod, life, music, economy, interiors, openPause, closePause, goThroughDoor };
+window.game = { mounted, tournament, getHero: () => hero, applyHero, activities, tutorial, player, world, npcs, quests, cam, duel, battle, horse, course, input, ch3, ch4, ch5, tod, life, music, economy, interiors, openPause, closePause, goThroughDoor };

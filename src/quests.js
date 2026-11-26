@@ -1,7 +1,7 @@
 // Histoire et quêtes. Chaque étape a un objectif et une cible (pour la boussole).
 import * as THREE from 'three';
-import { HIDE } from './layout.js?v=202611261414';
-import { playSuccess } from './audio.js?v=202611261414';
+import { HIDE } from './layout.js?v=202611261508';
+import { playSuccess } from './audio.js?v=202611261508';
 
 const HITS_NEEDED = 5;
 const NARRATOR = '';
@@ -93,7 +93,7 @@ export class QuestManager {
       case 25: ui.setQuest('Chapitre V · La Pentecôte', 'Équipe-toi si tu veux, puis monte sur Tonnerre et rejoins Sire Godefroy et Bertrand devant la porte du château.'); break;
       case 26: ui.setQuest('Chapitre V · La Pentecôte', 'Chevauche avec eux vers l\'est, par la forêt. Reste près de Sire Godefroy.'); break;
       case 27: ui.setQuest('Chapitre V · La Pentecôte', 'Avance jusqu\'au comte et agenouille-toi devant lui.'); break;
-      default: ui.setQuest('Chevalier de Montclair', 'Tu es chevalier ! Explore Montclair librement. D\'autres aventures viendront…');
+      default: ui.setQuest('Chevalier de Montclair', 'Tu es chevalier ! Le héraut du comte annonce un grand tournoi : rejoins-le près de la lice, à l\'est.');
     }
   }
 

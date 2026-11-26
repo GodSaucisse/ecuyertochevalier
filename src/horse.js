@@ -1,7 +1,7 @@
 // Tonnerre, le cheval : modèle articulé, allures (pas, trot, galop) et conduite.
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261414';
-import { playHoof } from './audio.js?v=202611261414';
+import { Tex } from './textures.js?v=202611261508';
+import { playHoof } from './audio.js?v=202611261508';
 
 const SPEEDS = { walk: 2.4, trot: 5.5, gallop: 11.5 };
 const RADIUS = 0.85;
@@ -115,7 +115,7 @@ function buildHorse(coatColor = 0x7a4626, blanketColor = 0x22386e) {
   seat.position.set(0, 1.72, -0.08);
   body.add(seat);
 
-  return { root, body, neck, head, tail, legs, seat };
+  return { root, body, neck, head, tail, legs, seat, blanket };
 }
 
 export class Horse {
@@ -162,6 +162,9 @@ export class Horse {
     if (!m) this.speed = 0;
     this.syncColliders();
   }
+
+  /** Couleur du caparaçon (aux couleurs du blason du cavalier). */
+  setBlanket(color) { this.parts.blanket.color.set(color); }
 
   /** Point au bout de la lance, en coordonnées du monde. */
   lanceTip(out = new THREE.Vector3()) {

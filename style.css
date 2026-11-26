@@ -221,7 +221,7 @@ body.in-duel #btn-map { display: none; }
 .panneau.menu { max-width: 640px; width: calc(100vw - 24px); max-height: calc(100vh - 24px); overflow: auto; padding: 1.2rem 1.2rem 1rem; }
 .menu h2 { margin: 0 0 0.6rem; color: #e8c66a; letter-spacing: 0.15em; }
 .tabs { display: flex; gap: 6px; justify-content: center; margin-bottom: 0.8rem; }
-.tabs button, .menu .boutons button, #apply-quality {
+.tabs button, .menu .boutons button, #apply-quality, #creator button.small, #creator .boutons button, #edit-hero {
   font-family: inherit; font-size: 1rem; padding: 0.45rem 1rem; cursor: pointer;
   background: rgba(122,46,31,0.5); color: #f3e6c8; border: 1px solid #c9a24a; border-radius: 3px;
 }
@@ -342,3 +342,39 @@ body.in-duel .explore-only { display: none !important; }
 #journal li.done { opacity: 0.6; }
 #journal .hints li { font-style: italic; opacity: 0.85; }
 #journal .muted { opacity: 0.6; font-style: italic; }
+
+/* ---------- Création du héros ---------- */
+#creator { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; background: rgba(10,8,6,0.82); overflow-y: auto; padding: 1rem; }
+.creator-box { max-width: 900px; width: 100%; }
+.creator-box h2 { text-align: center; color: #e8c66a; margin: 0 0 0.8rem; letter-spacing: 0.1em; }
+.creator-grid { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 1.2rem; }
+.creator-col.center { text-align: center; }
+.lbl { display: block; font-size: 0.85rem; color: #e8c66a; margin: 0.5rem 0 0.25rem; }
+#hero-name { display: block; width: 100%; margin-top: 0.25rem; padding: 0.4rem; font: inherit; background: #1c1612; color: #f2e6cc; border: 1px solid #8a6a3a; border-radius: 4px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; border: 2px solid #3a2a1a; padding: 0; cursor: pointer; }
+.swatch.on { border-color: #f2d27a; box-shadow: 0 0 0 2px #f2d27a; }
+.patterns { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.pattern { display: flex; flex-direction: column; align-items: center; padding: 4px 2px; font-size: 0.68rem; background: #241c16; border: 1px solid #5a4430; border-radius: 4px; color: #e8dcc0; cursor: pointer; }
+.pattern.on { border-color: #f2d27a; background: #4a3420; }
+button.small { margin-top: 0.6rem; padding: 0.3rem 0.7rem; font-size: 0.85rem; }
+#hero-face { display: block; margin: 0.6rem auto 0; }
+#hero-blazon { font-style: italic; margin-top: 0.4rem; color: #e8dcc0; }
+#hero-summary { display: flex; gap: 1rem; align-items: center; justify-content: center; margin-bottom: 1rem; }
+@media (max-width: 760px) {
+  .creator-grid { grid-template-columns: 1fr; gap: 0.4rem; }
+  #hero-shield { width: 90px; height: 114px; }
+  #hero-face { display: none; }
+}
+/* ---------- Combat à cheval ---------- */
+#mounted-hud { position: fixed; z-index: 11; top: 14px; left: 50%; transform: translateX(-50%); min-width: 260px; text-align: center; background: rgba(20,14,10,0.75); border: 1px solid #8a6a3a; border-radius: 6px; padding: 0.4rem 0.8rem; }
+#mh-title { color: #e8c66a; font-weight: bold; letter-spacing: 0.05em; }
+.mh-row { display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem; margin-top: 0.3rem; }
+.mh-bar { flex: 1; height: 9px; background: #2a1a14; border: 1px solid #5a3a2a; border-radius: 4px; overflow: hidden; }
+#mh-me { height: 100%; width: 100%; background: linear-gradient(90deg, #a83a2a, #d86a3a); transition: width 0.2s; }
+#mh-info { font-size: 0.85rem; margin-top: 0.25rem; }
+body.mounted-fight .mounted-only { display: inline-block; }
+body.mounted-fight #compass { display: none; }
+#creator .boutons { text-align: center; margin-top: 1rem; display: flex; gap: 0.6rem; justify-content: center; }
+#creator-ok { background: #7a2e1f !important; font-size: 1.1rem !important; padding: 0.6rem 1.6rem !important; }
+#tab-heros { text-align: center; }

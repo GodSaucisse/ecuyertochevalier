@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>D'Écuyer à Chevalier</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
-  <link rel="stylesheet" href="style.css?v=202611261414">
+  <link rel="stylesheet" href="style.css?v=202611261508">
   <script type="importmap">
     { "imports": { "three": "./lib/three.module.min.js", "three/addons/": "./lib/addons/" } }
   </script>
@@ -96,11 +96,13 @@
       <div class="tabs">
         <button data-tab="carte">Carte</button>
         <button data-tab="journal">Journal</button>
+        <button data-tab="heros">Héros</button>
         <button data-tab="reglages">Réglages</button>
         <button data-tab="commandes">Commandes</button>
       </div>
       <div class="tab" id="tab-carte"><canvas id="map" width="560" height="560"></canvas></div>
       <div class="tab" id="tab-journal"><div id="journal"></div></div>
+      <div class="tab" id="tab-heros"><div id="hero-summary"></div><button id="edit-hero">Modifier mon héros et mon blason</button></div>
       <div class="tab" id="tab-reglages">
         <label>Musique <input type="range" id="set-music" min="0" max="1" step="0.05"></label>
         <label>Effets sonores <input type="range" id="set-sfx" min="0" max="1" step="0.05"></label>
@@ -122,6 +124,8 @@
           <p><b>Combat</b> : <b>clic gauche</b> = coup léger · <b>clic droit</b> = coup lourd · <b>E</b> (maintenir) = parer · <b>Espace</b> = esquiver · <b>Tab</b> = changer de cible</p>
           <p>Un « ! » rouge au-dessus d'un ennemi = il attaque (orange = coup lourd) : pare ou esquive. Lever la garde pile au moment du coup = parade parfaite. 🛡 = il se protège : attends qu'il baisse sa garde, ou épuise-le.</p>
           <p><b>À cheval</b> : Z avancer · <b>Maj</b> galop · Q / D tourner · S freiner · <b>E</b> descendre</p>
+          <p><b>Combat à cheval</b> (avec une vraie épée) : <b>clic gauche</b> coup d'épée · <b>clic droit</b> coup lourd · <b>E</b> (maintenir, pendant un combat) se protéger. Plus tu vas vite, plus tu frappes fort.</p>
+          <p><b>Joute</b> : charge en longeant la barrière, <b>clic gauche</b> pour abaisser ta lance quand l'adversaire arrive (au bon moment = coup parfait), <b>E</b> pour te protéger.</p>
         </div>
         <div class="controls-touch">
           <p><b>Joystick</b> (gauche) : se déplacer, poussé à fond pour courir ou galoper · glisser à droite : caméra</p>
@@ -148,13 +152,45 @@
       <button id="btn-bow" class="tbtn hidden explore-only">🏹</button>
       <button id="btn-target" class="tbtn duel-only multi-only">🎯</button>
       <button id="btn-dodge" class="tbtn duel-only">↶</button>
-      <button id="btn-block" class="tbtn big duel-only">🛡</button>
-      <button id="btn-heavy" class="tbtn big duel-only">💥</button>
+      <button id="btn-block" class="tbtn big duel-only mounted-only">🛡</button>
+      <button id="btn-heavy" class="tbtn big duel-only mounted-only">💥</button>
       <button id="btn-attack" class="tbtn big">⚔️</button>
     </div>
   </div>
 
   <!-- Écran titre -->
+  <div id="creator" class="hidden">
+    <div class="panneau creator-box">
+      <h2 id="creator-title">Ton héros</h2>
+      <div class="creator-grid">
+        <div class="creator-col">
+          <label class="lbl">Ton nom <input id="hero-name" maxlength="18" autocomplete="off"></label>
+          <div class="lbl">Teint</div><div id="hero-skin" class="swatches"></div>
+          <div class="lbl">Cheveux</div><div id="hero-hair" class="swatches"></div>
+          <button id="hero-beard" class="small"></button>
+          <canvas id="hero-face" width="90" height="90"></canvas>
+        </div>
+        <div class="creator-col">
+          <div class="lbl">Champ de l'écu</div><div id="hero-field" class="swatches"></div>
+          <div class="lbl">Couleur du motif</div><div id="hero-charge" class="swatches"></div>
+          <div class="lbl">Motif</div><div id="hero-pattern" class="patterns"></div>
+        </div>
+        <div class="creator-col center">
+          <canvas id="hero-shield" width="150" height="190"></canvas>
+          <div id="hero-blazon"></div>
+          <p class="note">Ton blason ornera ton écu, ton manteau et le caparaçon de ton cheval.</p>
+        </div>
+      </div>
+      <div class="boutons"><button id="creator-cancel" class="hidden">Annuler</button><button id="creator-ok">Partir pour Montclair</button></div>
+    </div>
+  </div>
+
+  <div id="mounted-hud" class="hidden">
+    <div id="mh-title"></div>
+    <div class="mh-row"><span>Toi</span><div class="mh-bar"><div id="mh-me"></div></div></div>
+    <div id="mh-info"></div>
+  </div>
+
   <div id="intro">
     <div class="panneau">
       <div class="epee">⚔️</div>
@@ -184,6 +220,6 @@
     </div>
   </div>
 
-  <script type="module" src="src/main.js?v=202611261414"></script>
+  <script type="module" src="src/main.js?v=202611261508"></script>
 </body>
 </html>

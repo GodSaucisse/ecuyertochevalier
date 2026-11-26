@@ -284,19 +284,60 @@ function steel() {
   return toTextures(g, 0.8, 1);
 }
 
-/** Écu armorié (azur, au chevron d'or) avec usure. */
-function heraldry(field = '#1f3f8f', charge = '#d8b04a') {
-  const W = 256, H = 384;
-  const c = makeCanvas(W, H);
-  const ctx = c.getContext('2d');
+/** Couleurs du blason (émaux). */
+export const TINCTURES = {
+  azur: '#1f3f8f', gueules: '#a82020', sinople: '#2a6a2a', sable: '#1c1a1a', pourpre: '#6a2a6a',
+  or: '#d8b04a', argent: '#e8e4da',
+};
+
+/** Dessine des armoiries { field, charge, pattern } sur un contexte 2D de taille W × H. */
+export function drawArms(ctx, W, H, arms) {
+  const field = TINCTURES[arms.field] || arms.field || TINCTURES.azur;
+  const charge = TINCTURES[arms.charge] || arms.charge || TINCTURES.or;
   ctx.fillStyle = field;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = charge;
-  ctx.beginPath();
-  ctx.moveTo(0, H * 0.62); ctx.lineTo(W / 2, H * 0.3); ctx.lineTo(W, H * 0.62);
-  ctx.lineTo(W, H * 0.78); ctx.lineTo(W / 2, H * 0.46); ctx.lineTo(0, H * 0.78);
-  ctx.closePath();
-  ctx.fill();
+  const poly = (pts) => { ctx.beginPath(); pts.forEach(([x, y], i) => (i ? ctx.lineTo(x * W, y * H) : ctx.moveTo(x * W, y * H))); ctx.closePath(); ctx.fill(); };
+  switch (arms.pattern) {
+    case 'croix': ctx.fillRect(W * 0.4, 0, W * 0.2, H); ctx.fillRect(0, H * 0.3, W, H * 0.14); break;
+    case 'fasce': ctx.fillRect(0, H * 0.33, W, H * 0.2); break;
+    case 'pal': ctx.fillRect(W * 0.36, 0, W * 0.28, H); break;
+    case 'bande': poly([[0, 0], [0.28, 0], [1, 0.82], [1, 1], [0.72, 1], [0, 0.18]]); break;
+    case 'sautoir':
+      poly([[0, 0], [0.2, 0], [1, 0.87], [1, 1], [0.8, 1], [0, 0.13]]);
+      poly([[1, 0], [0.8, 0], [0, 0.87], [0, 1], [0.2, 1], [1, 0.13]]);
+      break;
+    case 'ecartele': ctx.fillRect(W / 2, 0, W / 2, H / 2); ctx.fillRect(0, H / 2, W / 2, H / 2); break;
+    case 'etoile': {
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const a = -Math.PI / 2 + i * Math.PI / 5, r = (i % 2 ? 0.13 : 0.32) * W;
+        const x = W / 2 + Math.cos(a) * r, y = H * 0.4 + Math.sin(a) * r;
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.closePath(); ctx.fill();
+      break;
+    }
+    case 'tour': {
+      const x0 = W * 0.3, x1 = W * 0.7, y0 = H * 0.22, y1 = H * 0.66;
+      ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+      for (let i = 0; i < 3; i++) ctx.fillRect(x0 + i * (x1 - x0) * 0.4 - (i === 2 ? (x1 - x0) * 0.0 : 0), y0 - H * 0.06, (x1 - x0) * 0.2, H * 0.07);
+      ctx.fillStyle = field;
+      ctx.beginPath(); ctx.arc(W / 2, y1, W * 0.08, Math.PI, 0); ctx.lineTo(W / 2 + W * 0.08, y1); ctx.fill();
+      ctx.fillRect(W / 2 - W * 0.025, y0 + H * 0.08, W * 0.05, H * 0.08);
+      break;
+    }
+    default: // chevron
+      poly([[0, 0.62], [0.5, 0.3], [1, 0.62], [1, 0.78], [0.5, 0.46], [0, 0.78]]);
+  }
+}
+
+/** Écu armorié avec usure. */
+function heraldry(arms = { field: 'azur', charge: 'or', pattern: 'chevron' }) {
+  const W = 256, H = 384;
+  const c = makeCanvas(W, H);
+  const ctx = c.getContext('2d');
+  drawArms(ctx, W, H, arms);
   // Usure et salissures
   const img = ctx.getImageData(0, 0, W, H);
   for (let y = 0; y < H; y++) {
@@ -341,6 +382,8 @@ export const Tex = {
   leather: () => cached('leather', leather),
   steel: () => cached('steel', steel),
   heraldry: () => cached('heraldry', () => heraldry()),
+  /** Armoiries personnalisées (mises en cache selon leur description). */
+  arms: (a) => cached('arms:' + a.field + a.charge + a.pattern, () => heraldry(a)),
 };
 
 /**

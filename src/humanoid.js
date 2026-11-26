@@ -2,7 +2,7 @@
 // et équipements d'époque (1126) : cotte de mailles, casque à nasal,
 // écu en amande, gambison, manteau, robe…
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261414';
+import { Tex } from './textures.js?v=202611261508';
 
 // ---------- Matériaux (partagés entre personnages) ----------
 const matCache = {};
@@ -63,6 +63,8 @@ function M(key) {
       // "cloth:0xRRGGBB" ou "trousers:0xRRGGBB"
       if (key.startsWith('cloth:')) m = fabric(parseInt(key.slice(6)), 'cloth', 5);
       else if (key.startsWith('hair:')) m = std({ color: parseInt(key.slice(5)), roughness: 0.9 });
+      else if (key.startsWith('skin:')) m = std({ color: parseInt(key.slice(5)), roughness: 0.7 });
+      else if (key.startsWith('arms:')) m = std({ map: Tex.arms(JSON.parse(key.slice(5))), roughness: 0.6, metalness: 0.05 });
       else m = std({ color: 0xff00ff });
   }
   matCache[key] = m;
@@ -101,7 +103,7 @@ function skirtGeo(rTop, rBottom, h, thetaStart = 0, thetaLength = Math.PI * 2) {
 }
 
 /** Écu normand en amande. */
-export function createKiteShield() {
+export function createKiteShield(arms = null) {
   const group = new THREE.Group();
   const w = 0.5, h = 0.92;
   const shape = new THREE.Shape();
@@ -120,7 +122,7 @@ export function createKiteShield() {
   const p = geo.attributes.position;
   for (let i = 0; i < p.count; i++) p.setZ(i, p.getZ(i) - Math.pow(p.getX(i) / (w / 2), 2) * 0.06);
   geo.computeVertexNormals();
-  mesh(geo, M('heraldry'), group);
+  mesh(geo, arms ? M('arms:' + JSON.stringify(arms)) : M('heraldry'), group);
   // Bordure de fer et umbo (bosse centrale)
   const rimPts = shape.getSpacedPoints(48).map((v) => new THREE.Vector3(v.x, v.y, 0.04 - Math.pow(v.x / (w / 2), 2) * 0.06));
   const rim = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(rimPts, true), 64, 0.012, 5, true);
@@ -151,14 +153,16 @@ export function createHumanoid(o = {}) {
   const opt = {
     outfit: 'gambeson', tunic: 0x3a5a8a, trousers: 0x4a4038, hair: 0x5a3a1e,
     beard: null, helmet: false, coif: false, hood: null, cloak: null, shield: false, scabbard: false,
+    skin: null, arms: null,
     ...o,
   };
   const root = new THREE.Group();
+  const SKIN = opt.skin ? M('skin:' + opt.skin) : M('skin');
   const mail = opt.outfit === 'mail';
   const body = mail ? M('mail') : opt.outfit === 'gambeson' ? M('gambeson') : M('cloth:' + opt.tunic);
   const legMat = mail ? M('mail') : M('cloth:' + opt.trousers);
   const boot = M('leatherDark');
-  const glove = mail ? M('leather') : M('skin');
+  const glove = mail ? M('leather') : SKIN;
 
   // ---- Jambes ----
   const legs = [];
@@ -224,14 +228,14 @@ export function createHumanoid(o = {}) {
   }
 
   // ---- Tête ----
-  const neck = mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.12, 10), M('skin'), spine, 0, 0.6, 0);
+  const neck = mesh(new THREE.CylinderGeometry(0.055, 0.065, 0.12, 10), SKIN, spine, 0, 0.6, 0);
   neck.castShadow = false;
   const head = new THREE.Group();
   head.position.y = 0.72;
   spine.add(head);
-  const skull = mesh(new THREE.SphereGeometry(0.112, 18, 14), M('skin'), head);
+  const skull = mesh(new THREE.SphereGeometry(0.112, 18, 14), SKIN, head);
   skull.scale.set(0.9, 1.08, 1);
-  mesh(new THREE.BoxGeometry(0.03, 0.05, 0.04), M('skin'), head, 0, -0.005, 0.11).rotation.x = -0.25; // nez
+  mesh(new THREE.BoxGeometry(0.03, 0.05, 0.04), SKIN, head, 0, -0.005, 0.11).rotation.x = -0.25; // nez
   mesh(new THREE.SphereGeometry(0.014, 6, 6), M('eye'), head, -0.038, 0.02, 0.096);
   mesh(new THREE.SphereGeometry(0.014, 6, 6), M('eye'), head, 0.038, 0.02, 0.096);
   mesh(new THREE.BoxGeometry(0.05, 0.01, 0.02), M('hair:' + opt.hair), head, -0.04, 0.045, 0.1);
@@ -329,7 +333,7 @@ export function createHumanoid(o = {}) {
   // ---- Écu ----
   let shield = null;
   if (opt.shield) {
-    shield = createKiteShield();
+    shield = createKiteShield(opt.arms);
     shield.position.set(-0.1, -0.08, 0.16);
     shield.rotation.set(0.05, -0.75, 0);
     arms[0].elbow.add(shield);

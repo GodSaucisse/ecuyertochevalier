@@ -1,7 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261414';
-import { Fighter } from './combat.js?v=202611261414';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261508';
+import { Fighter } from './combat.js?v=202611261508';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -50,11 +50,14 @@ export class Player {
     const old = this.h.root;
     const pos = old.position.clone(), rot = old.rotation.y, visible = old.visible;
     this.scene.remove(old);
+    this.eq = eq;
+    this.stats = stats;
+    const L = this.look;
     this.h = createHumanoid({
       outfit: eq.haubert ? 'mail' : 'gambeson',
-      trousers: this.look.trousers, hair: this.look.hair,
-      helmet: !!eq.casque, coif: !!eq.haubert && !!eq.casque, shield: !!eq.ecu,
-      cloak: eq.manteau ? 0x22386e : null,
+      trousers: L.trousers, hair: L.hair, skin: L.skin || null, beard: L.beard ? L.hair : null,
+      helmet: !!eq.casque, coif: !!eq.haubert && !!eq.casque, shield: !!eq.ecu, arms: L.arms || null,
+      cloak: eq.manteau ? (L.cloak || 0x22386e) : null,
     });
     this.object = this.h.root;
     this.object.position.copy(pos);
@@ -73,6 +76,12 @@ export class Player {
     f.defenseMul = stats.defense;
     f.blockCostMul = stats.blockCost;
     f.damageMul = stats.damage;
+  }
+
+  /** Apparence choisie par le joueur (visage et blason). */
+  setHero(hero) {
+    this.look = { ...this.look, skin: hero.skin, hair: hero.hair, beard: hero.beard, arms: hero.arms, cloak: hero.cloakColor };
+    this.applyEquipment(this.eq || {}, this.stats || { defense: 1, blockCost: 1, damage: 1 });
   }
 
   /** Change l'arme tenue en main (ex. : vraie épée au chapitre III). */

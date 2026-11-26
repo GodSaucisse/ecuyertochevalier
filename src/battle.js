@@ -2,10 +2,10 @@
 // Reprend les règles et l'interface du duel, avec une cible verrouillée
 // que l'on peut changer (Tab / 🎯).
 import * as THREE from 'three';
-import { Duel, setThreat } from './duel.js?v=202611261414';
-import { Fighter } from './combat.js?v=202611261414';
-import { animateWalk } from './humanoid.js?v=202611261414';
-import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261414';
+import { Duel, setThreat } from './duel.js?v=202611261508';
+import { Fighter } from './combat.js?v=202611261508';
+import { animateWalk } from './humanoid.js?v=202611261508';
+import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261508';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -274,7 +274,7 @@ export class Battle extends Duel {
       $('hurt').style.opacity = 1;
       setTimeout(() => { $('hurt').style.opacity = 0; }, 180);
     } else {
-      this.message(!def.alive ? 'Brigand vaincu !' : ev.kind === 'heavy' ? 'Coup lourd !' : 'Touché !', 700);
+      this.message(!def.alive ? (this.enemies.length === 1 ? 'Vaincu !' : 'Ennemi vaincu !') : ev.kind === 'heavy' ? 'Coup lourd !' : 'Touché !', 700);
       if (!def.alive) { this.updateTuto(); this.lockNearest(); }
     }
   }

@@ -1,7 +1,7 @@
 // Le temps qui passe : course du soleil et de la lune, couleurs du ciel, étoiles,
 // torches et fenêtres éclairées la nuit, et météo (clair, nuageux, brume, pluie).
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611261414';
+import { Tex } from './textures.js?v=202611261508';
 
 const C = (hex) => new THREE.Color(hex);
 // Ambiances de référence, selon la hauteur du soleil
