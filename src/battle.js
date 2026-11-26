@@ -2,10 +2,10 @@
 // Reprend les règles et l'interface du duel, avec une cible verrouillée
 // que l'on peut changer (Tab / 🎯).
 import * as THREE from 'three';
-import { Duel } from './duel.js?v=202611252217';
-import { Fighter, mirror, DIRS } from './combat.js?v=202611252217';
-import { animateWalk } from './humanoid.js?v=202611252217';
-import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611252217';
+import { Duel, setThreat } from './duel.js?v=202611261106';
+import { Fighter } from './combat.js?v=202611261106';
+import { animateWalk } from './humanoid.js?v=202611261106';
+import { playBlock, playParry, playHurt, playVictory, playSwing } from './audio.js?v=202611261106';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -40,13 +40,12 @@ export class Battle extends Duel {
     this.enemies = enemies.map((e, i) => {
       const fighter = new Fighter(e.h, e.sword, { maxHp: e.hp ?? 60, speed: e.speed ?? 1.25, damageMul: e.damageMul ?? 0.8 });
       fighter.active = true;
-      fighter.guard = pick(DIRS);
       const ind = $('gi-enemy').cloneNode(true);
       ind.id = 'gi-enemy-' + i;
       $('combat').appendChild(ind);
       return {
         ...e, fighter, ind, obj: e.h.root,
-        ai: { attackIn: rand(1.5, 3.5), guardIn: rand(1, 3), reaction: null, strafe: i % 2 ? 1 : -1, strafeIn: rand(1, 3) },
+        ai: { attackIn: rand(1.5, 3.5), guardIn: rand(1, 3), blockUntil: 0, reaction: null, strafe: i % 2 ? 1 : -1, strafeIn: rand(1, 3) },
         walkPhase: Math.random() * 6, fall: 0,
       };
     });
@@ -125,8 +124,8 @@ export class Battle extends Duel {
 
   updateTuto() {
     const n = this.alive.length;
-    const hint = this.isTouch ? '🎯 pour changer de cible.' : 'Tab pour changer de cible.';
-    $('tuto-text').textContent = `Brigands restants : ${n}. Garde un œil sur les autres pendant que tu combats ! ${hint}`;
+    const hint = this.isTouch ? '🛡 parer · ↶ esquiver · 🎯 changer de cible.' : 'Maj : parer · Espace : esquiver · Tab : changer de cible.';
+    $('tuto-text').textContent = `Brigands restants : ${n}. Garde un œil sur les autres ! ${hint}`;
   }
 
   // ---------- Boucle ----------
@@ -203,25 +202,28 @@ export class Battle extends Duel {
     animateWalk(e.h, e.walkPhase, moving * (dist > 6 ? 1 : 0.7), true);
 
     if (this.pause <= 0 && this.me.alive && !this.over) {
-      ai.guardIn -= dt;
-      if (ai.guardIn < 0 && !f.attacking) { f.setGuard(pick(DIRS.filter((d) => d !== f.guard))); ai.guardIn = rand(1.8, 3.5); }
-      // Réagir aux coups du joueur s'il nous vise
+      // Réagir aux coups du joueur s'il nous vise : parfois, on lève la garde
       const me = this.me;
       if (this.locked === e && me.state === 'windup' && me.attack && !ai.reaction && !f.attacking) {
-        ai.reaction = { at: this.clock + rand(0.25, 0.45), dir: mirror(me.attack.dir), success: Math.random() < 0.4 };
+        ai.reaction = { at: this.clock + rand(0.25, 0.45), success: Math.random() < 0.4 };
       }
       if (ai.reaction && this.clock >= ai.reaction.at) {
-        if (ai.reaction.success) f.setGuard(ai.reaction.dir);
+        if (ai.reaction.success) ai.blockUntil = this.clock + 0.9;
         ai.reaction = null;
       }
       if (me.state !== 'windup') ai.reaction = null;
+      // Les brigands à l'écart restent souvent sur leurs gardes
+      ai.guardIn -= dt;
+      if (!engaged && ai.guardIn < 0) { ai.blockUntil = this.clock + rand(0.8, 1.6); ai.guardIn = rand(2, 4); }
+      f.setBlocking(this.clock < ai.blockUntil);
       // Attaquer (les ennemis à l'écart attaquent moins souvent)
       ai.attackIn -= dt;
       const othersAttacking = this.alive.some((o) => o !== e && o.fighter.attacking);
       if (engaged && ai.attackIn < 0 && dist < REACH - 0.2 && !f.busy && !othersAttacking) {
-        f.setGuard(pick(DIRS));
+        ai.blockUntil = 0;
+        f.setBlocking(false);
         f.tryAttack(Math.random() < 0.7 ? 'light' : 'heavy');
-        ai.attackIn = this.locked === e ? rand(1.6, 3.0) : rand(3.0, 5.0);
+        ai.attackIn = this.locked === e ? rand(1.8, 3.2) : rand(3.5, 5.5);
       }
     }
     f.update(dt);
@@ -240,7 +242,7 @@ export class Battle extends Duel {
     const contact = defObj.position.clone().add(attObj.position).multiplyScalar(0.5);
     contact.y = 1.3;
     if (def.time < def.invulnUntil) { if (!playerAttacks) this.message('Esquivé', 600); return; }
-    if (def.parries(ev.dir)) {
+    if (def.parries()) {
       def.cancelForParry();
       att.getParried();
       playParry();
@@ -250,13 +252,14 @@ export class Battle extends Duel {
       this.message(playerAttacks ? 'Paré…' : 'PARADE !', 1000);
       return;
     }
-    if (def.blocks(ev.dir)) {
-      def.blockedHit();
+    if (def.blocks()) {
+      const broken = def.blockedHit(ev.kind);
       att.wasBlocked();
       playBlock();
       this.burst(contact, 14, 0xffb050);
-      this.shake = 0.15;
-      if (!playerAttacks) this.message('Bloqué', 500);
+      this.shake = broken ? 0.4 : 0.15;
+      if (broken) this.message(playerAttacks ? 'Garde brisée ! Frappe !' : 'Garde brisée !', 1000);
+      else this.message(playerAttacks ? 'Bloqué' : 'Paré', 500);
       return;
     }
     const dmg = ev.damage * (playerAttacks ? 1.4 : 1); // vraie épée contre gambisons
@@ -303,25 +306,19 @@ export class Battle extends Duel {
     $('player-st').classList.toggle('exhausted', me.exhausted);
     for (const e of this.enemies) {
       const f = e.fighter, gi = e.ind;
-      const sp = f.alive ? this.project(e.obj.position, 1.25) : null;
+      const sp = f.alive ? this.project(e.obj.position, 2.25) : null;
       gi.style.display = sp ? '' : 'none';
       if (!sp) continue;
       gi.style.left = sp.x + 'px';
       gi.style.top = sp.y + 'px';
       gi.style.opacity = e === L ? 1 : 0.55;
       gi.style.transform = e === L ? '' : 'scale(0.7)';
-      const atk = f.state === 'windup' && f.attack ? mirror(f.attack.dir) : null;
-      for (const d of DIRS) {
-        const w = gi.querySelector('.' + d);
-        w.classList.toggle('on', mirror(f.guard) === d && !atk);
-        w.classList.toggle('atk', atk === d);
-        w.classList.toggle('heavy', atk === d && f.attack.kind === 'heavy');
-      }
+      setThreat(gi, f);
     }
     const gp = $('gi-player');
-    const pp = this.project(this.player.position, 1.1);
+    const pp = this.project(this.player.position, 2.1);
     gp.style.display = pp ? '' : 'none';
     if (pp) { gp.style.left = pp.x + 'px'; gp.style.top = pp.y + 'px'; }
-    for (const d of DIRS) gp.querySelector('.' + d).classList.toggle('on', me.guard === d && me.alive);
+    setThreat(gp, me, true);
   }
 }

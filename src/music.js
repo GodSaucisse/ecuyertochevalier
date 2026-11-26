@@ -1,7 +1,7 @@
 // Musique médiévale composée en direct par le jeu (aucun fichier audio).
 // Mode dorien de ré, luth en arpèges, flûte à bec, bourdon façon vielle à roue,
 // et tambour pour les combats. La mélodie varie à chaque reprise.
-import { audio } from './audio.js?v=202611252217';
+import { audio } from './audio.js?v=202611261106';
 
 const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const DORIAN = [0, 2, 3, 5, 7, 9, 10];

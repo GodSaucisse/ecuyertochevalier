@@ -1,29 +1,29 @@
 // Point d'entrée du jeu : assemble le monde, le joueur, les PNJ, la caméra et la boucle de jeu.
 import * as THREE from 'three';
-import { buildWorld } from './world.js?v=202611252217';
-import { Player } from './player.js?v=202611252217';
-import { Input } from './input.js?v=202611252217';
-import { UI } from './ui.js?v=202611252217';
-import { createNPCs } from './npcs.js?v=202611252217';
-import { QuestManager } from './quests.js?v=202611252217';
-import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611252217';
-import { createEnvironment } from './sky.js?v=202611252217';
-import { createPostFX } from './postfx.js?v=202611252217';
-import { createGrass } from './grass.js?v=202611252217';
-import { createParticles } from './particles.js?v=202611252217';
-import { Duel } from './duel.js?v=202611252217';
-import { Battle } from './battle.js?v=202611252217';
-import { loadSave, writeSave, clearSave } from './save.js?v=202611252217';
-import { Horse } from './horse.js?v=202611252217';
-import { createCourse } from './course.js?v=202611252217';
-import { createLife } from './life.js?v=202611252217';
-import { createChapter3 } from './chapter3.js?v=202611252217';
-import { STABLE_HORSE } from './layout.js?v=202611252217';
-import { createSword } from './humanoid.js?v=202611252217';
-import { Music } from './music.js?v=202611252217';
-import { Ambience } from './ambience.js?v=202611252217';
-import { loadSettings, saveSettings } from './settings.js?v=202611252217';
-import { drawMap } from './map.js?v=202611252217';
+import { buildWorld } from './world.js?v=202611261106';
+import { Player } from './player.js?v=202611261106';
+import { Input } from './input.js?v=202611261106';
+import { UI } from './ui.js?v=202611261106';
+import { createNPCs } from './npcs.js?v=202611261106';
+import { QuestManager } from './quests.js?v=202611261106';
+import { initAudio, playHit, playSwing, playLanceHit, setVolumes } from './audio.js?v=202611261106';
+import { createEnvironment } from './sky.js?v=202611261106';
+import { createPostFX } from './postfx.js?v=202611261106';
+import { createGrass } from './grass.js?v=202611261106';
+import { createParticles } from './particles.js?v=202611261106';
+import { Duel } from './duel.js?v=202611261106';
+import { Battle } from './battle.js?v=202611261106';
+import { loadSave, writeSave, clearSave } from './save.js?v=202611261106';
+import { Horse } from './horse.js?v=202611261106';
+import { createCourse } from './course.js?v=202611261106';
+import { createLife } from './life.js?v=202611261106';
+import { createChapter3 } from './chapter3.js?v=202611261106';
+import { STABLE_HORSE } from './layout.js?v=202611261106';
+import { createSword } from './humanoid.js?v=202611261106';
+import { Music } from './music.js?v=202611261106';
+import { Ambience } from './ambience.js?v=202611261106';
+import { loadSettings, saveSettings } from './settings.js?v=202611261106';
+import { drawMap } from './map.js?v=202611261106';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -389,7 +389,7 @@ function frame() {
     if (ui.dialogOpen) {
       if (actions.interact || actions.attack || actions.jump || actions.heavy) ui.advanceDialog();
     } else if (f) {
-      f.handleActions(actions, input.move);
+      f.handleActions(actions, input.move, input.blockHeld);
     } else {
       const near = nearestNPC();
       const nearHorse = !horse.mounted && horse.position.distanceTo(player.position) < 2.6 && quests.step >= 7;
@@ -412,7 +412,6 @@ function frame() {
 
     const frozen = ui.dialogOpen && !f;
     if (f) {
-      f.guardFromLook(look.dx, look.dy);
       player.update(dtGame, ui.dialogOpen ? { x: 0, y: 0 } : input.move, false, cam.yaw, f.lockTarget);
       f.update(dtGame);
       horse.update(dt);

@@ -27,9 +27,6 @@ export class Input {
       if (e.code === 'Tab') this.actions.target = true;
       if (e.code === 'KeyM') this.actions.map = true;
       if (e.code === 'Escape' || e.code === 'KeyP') this.actions.pause = true;
-      if (e.code === 'Digit1' || e.code === 'Numpad4') this.actions.guard = 'L';
-      if (e.code === 'Digit2' || e.code === 'Numpad8') this.actions.guard = 'T';
-      if (e.code === 'Digit3' || e.code === 'Numpad6') this.actions.guard = 'R';
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => this.keys.clear());
@@ -131,6 +128,10 @@ export class Input {
     bind('btn-heavy', 'heavy');
     bind('btn-dodge', 'jump');
     bind('btn-target', 'target');
+    // Parer : bouton à maintenir
+    const blockBtn = document.getElementById('btn-block');
+    blockBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); this.touchBlock = true; blockBtn.setPointerCapture(e.pointerId); });
+    for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) blockBtn.addEventListener(ev, () => { this.touchBlock = false; });
   }
 
   /** Direction de déplacement : x = droite/gauche, y = avant/arrière. */
@@ -146,6 +147,11 @@ export class Input {
     const jl = Math.hypot(this.joy.x, this.joy.y);
     if (jl > 0.15) return { x: this.joy.x, y: this.joy.y };
     return { x: 0, y: 0 };
+  }
+
+  /** Parade maintenue (Maj, ou bouton 🛡 sur mobile). */
+  get blockHeld() {
+    return this.keys.has('ShiftLeft') || this.keys.has('ShiftRight') || !!this.touchBlock;
   }
 
   get run() {

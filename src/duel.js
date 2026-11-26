@@ -1,8 +1,8 @@
 // Duel d'entraînement contre Bertrand : leçons (bloquer, toucher, parer) puis duel libre.
 import * as THREE from 'three';
-import { Fighter, mirror, DIRS } from './combat.js?v=202611252217';
-import { createSword, animateWalk } from './humanoid.js?v=202611252217';
-import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611252217';
+import { Fighter } from './combat.js?v=202611261106';
+import { createSword, animateWalk } from './humanoid.js?v=202611261106';
+import { playBlock, playParry, playHurt, playVictory, playSuccess, playSwing } from './audio.js?v=202611261106';
 
 const $ = (id) => document.getElementById(id);
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -13,25 +13,37 @@ const REACH = 2.7;
 const KEEP_DIST = 2.0;
 
 function phases(isTouch) {
-  const guardHow = isTouch ? 'glisse le doigt sur la droite de l\'écran' : 'bouge la souris';
+  const block = isTouch ? 'maintiens 🛡' : 'maintiens Maj';
+  const attacks = isTouch ? '⚔️ coup léger, 💥 coup lourd' : 'clic gauche = coup léger, clic droit = coup lourd';
   return [
     {
-      id: 'block', title: 'Leçon 1 · Bloquer', goal: 3, enemySpeed: 1.9,
-      text: `Bertrand va attaquer. L'indicateur rouge montre d'où vient le coup : ${guardHow} vers ce côté (gauche, haut ou droite) pour placer ta garde et bloquer.`,
+      id: 'block', title: 'Leçon 1 · Parer', goal: 3, enemySpeed: 1.9,
+      text: `Quand un « ! » rouge apparaît au-dessus de Bertrand, il attaque : ${block} pour lever ta garde et bloquer le coup.`,
     },
     {
       id: 'hit', title: 'Leçon 2 · Toucher', goal: 3, enemySpeed: 1,
-      text: `Les flèches blanches montrent la garde de Bertrand. Place ta garde d'un AUTRE côté, approche-toi et frappe : ${isTouch ? '⚔️ coup léger, 💥 coup lourd' : 'clic gauche = coup léger, clic droit = coup lourd'}.`,
+      text: `Quand Bertrand se protège (🛡), tes coups sont bloqués. Frappe quand il baisse sa garde : ${attacks}.`,
     },
     {
-      id: 'parry', title: 'Leçon 3 · Parer', goal: 1, enemySpeed: 1.75, maxTries: 6,
-      text: `Bertrand prépare un coup lourd (indicateur orange). Juste avant l'impact, lance un coup lourd ${isTouch ? '(💥)' : '(clic droit)'} du même côté que l'attaque : il sera déséquilibré.`,
+      id: 'parry', title: 'Leçon 3 · Parade parfaite', goal: 1, enemySpeed: 1.75, maxTries: 6,
+      text: `Lève ta garde au dernier moment, juste quand son coup va tomber : Bertrand sera déséquilibré et tu pourras frapper.`,
     },
     {
       id: 'free', title: 'Duel', goal: null, enemySpeed: 1.2,
-      text: `Bats Bertrand ! Bloque, pare, esquive ${isTouch ? '(↶)' : '(Espace)'} et surveille ton endurance (barre bleue).`,
+      text: `Bats Bertrand ! Pare (${isTouch ? '🛡' : 'Maj'}), esquive (${isTouch ? '↶' : 'Espace'}) et surveille ton endurance (barre bleue) : parer la fatigue aussi.`,
     },
   ];
+}
+
+/** Met à jour le signal affiché au-dessus d'un combattant. */
+export function setThreat(el, f, mine = false) {
+  const t = el.querySelector('.threat');
+  const atk = !mine && f.state === 'windup' && f.attack;
+  const guard = f.isBlocking;
+  const cls = atk ? (f.attack.kind === 'heavy' ? 'threat atk heavy' : 'threat atk') : guard ? 'threat guard' : 'threat';
+  if (t.className !== cls) t.className = cls;
+  const txt = atk ? '!' : guard ? '🛡' : '';
+  if (t.textContent !== txt) t.textContent = txt;
 }
 
 export class Duel {
@@ -43,7 +55,6 @@ export class Duel {
     this.slowUntil = 0;
     this.shake = 0;
     this.clock = 0;
-    this.guardAcc = { x: 0, y: 0 };
     this.sparks = this.createSparks();
     this.tmp = new THREE.Vector3();
   }
@@ -108,8 +119,7 @@ export class Duel {
     this.me.reset();
     this.enemy.reset();
     this.enemy.speed = this.phase.enemySpeed;
-    this.enemy.guard = pick(DIRS);
-    this.ai = { attackIn: rand(1.2, 2.0), guardIn: rand(1.5, 2.5), reaction: null, strafe: Math.random() < 0.5 ? 1 : -1, strafeIn: 2 };
+    this.ai = { attackIn: rand(1.2, 2.0), guardIn: rand(1.0, 2.0), guarding: false, blockUntil: 0, reaction: null, strafe: Math.random() < 0.5 ? 1 : -1, strafeIn: 2 };
     this.player.position.copy(START.me);
     this.npc.object.position.copy(START.enemy);
     $('tuto-title').textContent = this.phase.title;
@@ -136,25 +146,13 @@ export class Duel {
   }
 
   // ---------- Commandes du joueur ----------
-  /** Glisser (souris ou doigt) pour choisir la garde. */
-  guardFromLook(dx, dy) {
-    const acc = this.guardAcc;
-    acc.x += dx; acc.y += dy;
-    const T = this.isTouch ? 45 : 28;
-    if (Math.hypot(acc.x, acc.y) > T) {
-      let d;
-      if (acc.y < -Math.abs(acc.x) * 0.7) d = 'T';
-      else d = acc.x < 0 ? 'L' : 'R';
-      this.me.setGuard(d);
-      acc.x = acc.y = 0;
-    }
-    acc.x *= 0.92; acc.y *= 0.92;
-  }
+  /** (Ancienne garde directionnelle : plus utilisée.) */
+  guardFromLook() {}
 
-  handleActions(actions, move) {
-    if (!this.running || this.over) return;
+  handleActions(actions, move, blockHeld = false) {
+    if (!this.running || this.over) { if (this.me) this.me.setBlocking(false); return; }
     const me = this.me;
-    if (actions.guard) me.setGuard(actions.guard);
+    me.setBlocking(!!blockHeld);
     if (actions.attack && me.tryAttack('light')) playSwing();
     if (actions.heavy && me.tryAttack('heavy')) playSwing();
     if (actions.jump) {
@@ -233,30 +231,35 @@ export class Duel {
 
     // Décisions
     if (this.pause <= 0 && e.alive && me.alive && !this.over) {
-      // Changer de garde de temps en temps
-      ai.guardIn -= dt;
-      if (ai.guardIn < 0 && !e.attacking) {
-        const others = DIRS.filter((d) => d !== e.guard);
-        e.setGuard(pick(others));
-        ai.guardIn = ph === 'hit' ? rand(1.6, 2.6) : rand(2, 4);
+      // Garde de Bertrand
+      const now = this.clock;
+      if (ph === 'hit') {
+        // Il lève et baisse sa garde à intervalles réguliers
+        ai.guardIn -= dt;
+        if (ai.guardIn < 0) { ai.guarding = !ai.guarding; ai.guardIn = ai.guarding ? rand(1.4, 2.4) : rand(1.6, 2.6); }
+        e.setBlocking(ai.guarding);
+      } else if (ph === 'free') {
+        // Il réagit parfois quand on l'attaque
+        if (me.state === 'windup' && me.attack && !ai.reaction && !e.attacking) {
+          ai.reaction = { at: now + rand(0.2, 0.4), success: Math.random() < (me.attack.kind === 'heavy' ? 0.55 : 0.45) };
+        }
+        if (ai.reaction && now >= ai.reaction.at) {
+          if (ai.reaction.success) ai.blockUntil = now + 0.9;
+          ai.reaction = null;
+        }
+        if (me.state !== 'windup') ai.reaction = null;
+        e.setBlocking(now < ai.blockUntil);
+      } else {
+        e.setBlocking(false);
       }
-      // Réagir aux attaques du joueur (duel libre seulement)
-      if (ph === 'free' && me.state === 'windup' && me.attack && !ai.reaction && !e.attacking) {
-        const success = Math.random() < (me.attack.kind === 'heavy' ? 0.65 : 0.5);
-        ai.reaction = { at: this.clock + rand(0.22, 0.42), dir: mirror(me.attack.dir), success };
-      }
-      if (ai.reaction && this.clock >= ai.reaction.at) {
-        if (ai.reaction.success) e.setGuard(ai.reaction.dir);
-        ai.reaction = null;
-      }
-      if (me.state !== 'windup') ai.reaction = null;
 
       // Attaquer
       if (ph !== 'hit') {
         ai.attackIn -= dt;
         if (ai.attackIn < 0 && dist < REACH - 0.2 && !e.busy && !me.busy) {
           const kind = ph === 'parry' ? 'heavy' : ph === 'block' ? 'light' : (Math.random() < 0.65 ? 'light' : 'heavy');
-          e.setGuard(pick(DIRS));
+          ai.blockUntil = 0;
+          e.setBlocking(false);
           e.tryAttack(kind);
           ai.attackIn = ph === 'free' ? rand(1.3, 2.6) : ph === 'parry' ? rand(2.6, 3.4) : rand(2.0, 2.8);
         }
@@ -288,7 +291,7 @@ export class Duel {
       return;
     }
     const window = ph === 'parry' ? 0.5 : undefined;
-    if (def.parries(ev.dir, window)) {
+    if (def.parries(null, window)) {
       def.cancelForParry();
       att.getParried();
       playParry();
@@ -301,16 +304,17 @@ export class Duel {
       } else this.message('Paré…', 800);
       return;
     }
-    if (def.blocks(ev.dir)) {
-      def.blockedHit();
+    if (def.blocks()) {
+      const broken = def.blockedHit(ev.kind);
       att.wasBlocked();
       playBlock();
       this.burst(contact, 14, 0xffb050);
-      this.shake = 0.15;
-      if (meDef) {
-        this.message('Bloqué', 500);
+      this.shake = broken ? 0.4 : 0.15;
+      if (broken) this.message(meDef ? 'Garde brisée !' : 'Garde brisée ! Frappe !', 1000);
+      else if (meDef) {
+        this.message('Paré', 500);
         if (ph === 'block') { this.count++; this.updateCount(); }
-      }
+      } else this.message('Bloqué', 500);
       if (ph === 'parry' && meDef) this.countTry();
       return;
     }
@@ -379,25 +383,18 @@ export class Duel {
     $('player-st').style.width = me.stamina + '%';
     $('player-st').classList.toggle('exhausted', me.exhausted);
 
-    // Indicateur de garde de l'adversaire (vu de notre écran, donc inversé gauche/droite)
+    // Signal au-dessus de l'adversaire : « ! » rouge = il attaque (orange = coup lourd), 🛡 = il se protège
     const gi = $('gi-enemy');
-    const sp = this.project(this.npc.object.position, 1.25);
-    gi.style.display = sp ? '' : 'none';
+    const sp = this.project(this.npc.object.position, 2.25);
+    gi.style.display = sp && e.alive ? '' : 'none';
     if (sp) { gi.style.left = sp.x + 'px'; gi.style.top = sp.y + 'px'; }
-    const attackSide = e.state === 'windup' && e.attack ? mirror(e.attack.dir) : null;
-    for (const d of DIRS) {
-      const w = gi.querySelector('.' + d);
-      const shown = mirror(e.guard) === d;
-      w.classList.toggle('on', shown && !attackSide && e.alive);
-      w.classList.toggle('atk', attackSide === d);
-      w.classList.toggle('heavy', attackSide === d && e.attack.kind === 'heavy');
-    }
+    setThreat(gi, e);
     // Notre garde
     const gp = $('gi-player');
-    const pp = this.project(this.player.position, 1.1);
+    const pp = this.project(this.player.position, 2.1);
     gp.style.display = pp ? '' : 'none';
     if (pp) { gp.style.left = pp.x + 'px'; gp.style.top = pp.y + 'px'; }
-    for (const d of DIRS) gp.querySelector('.' + d).classList.toggle('on', me.guard === d && me.alive);
+    setThreat(gp, me, true);
   }
 
   project(pos, height) {

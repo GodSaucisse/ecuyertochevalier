@@ -1,11 +1,11 @@
 // Chapitre III : la route de l'abbaye, l'escorte de Sire Godefroy et l'embuscade.
 import * as THREE from 'three';
-import { Tex } from './textures.js?v=202611252217';
-import { ROAD, AMBUSH, onRoad } from './layout.js?v=202611252217';
-import { Horse } from './horse.js?v=202611252217';
-import { createHumanoid, createSword, createAxe, createClub } from './humanoid.js?v=202611252217';
-import { Fighter, DIRS } from './combat.js?v=202611252217';
-import { playBlock } from './audio.js?v=202611252217';
+import { Tex } from './textures.js?v=202611261106';
+import { ROAD, AMBUSH, onRoad } from './layout.js?v=202611261106';
+import { Horse } from './horse.js?v=202611261106';
+import { createHumanoid, createSword, createAxe, createClub } from './humanoid.js?v=202611261106';
+import { Fighter, DIRS } from './combat.js?v=202611261106';
+import { playBlock } from './audio.js?v=202611261106';
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const COURT_SPOT = { x: 0, z: -31, rot: 0 };
@@ -86,7 +86,7 @@ export function createChapter3(scene, world) {
     h.handR.add(weapon);
     h.root.visible = false;
     scene.add(h.root);
-    return { h, sword: weapon, name: names[i], hp: i === 2 ? 80 : 60, speed: i === 2 ? 1.1 : 1.3, damageMul: i === 2 ? 0.95 : 0.8 };
+    return { h, sword: weapon, name: names[i], hp: i === 2 ? 80 : 60, speed: i === 2 ? 1.1 : 1.3, damageMul: i === 2 ? 0.85 : 0.7 };
   });
   // Positions d'apparition : à la lisière de la clairière
   const spawnAt = (a, r = AMBUSH.r + 1.5) => ({ x: AMBUSH.x + Math.cos(a) * r, z: AMBUSH.z + Math.sin(a) * r });

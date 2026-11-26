@@ -1,10 +1,11 @@
-// Système de combat inspiré de For Honor.
+// Système de combat (version simple).
 //
-// Chaque combattant a une GARDE dans une des trois directions, vue de sa propre position :
-//   'L' = sa gauche, 'T' = en haut, 'R' = sa droite.
-// Une attaque part de la garde de l'attaquant. Elle arrive donc sur le côté OPPOSÉ du défenseur
-// (ma gauche est en face de sa droite). Le défenseur bloque si sa garde est sur ce côté-là.
-// Parade : lancer un coup lourd dans la bonne direction juste avant l'impact.
+// - Coup léger : rapide. Coup lourd : lent, plus de dégâts, épuise davantage celui qui le bloque.
+// - Parer : maintenir la garde levée bloque tous les coups (cela coûte de l'endurance ;
+//   à zéro d'endurance, la garde est brisée).
+// - Parade parfaite : lever la garde juste avant l'impact → l'attaquant est déséquilibré.
+// - Esquive : un pas rapide, invulnérable un court instant.
+// Les directions (L, T, R) ne servent plus qu'à varier les animations.
 import * as THREE from 'three';
 
 export const DIRS = ['L', 'T', 'R'];
@@ -15,7 +16,8 @@ export const ATTACKS = {
   light: { windup: 0.42, strike: 0.12, recover: 0.38, cost: 10, damage: 10 },
   heavy: { windup: 0.8, strike: 0.16, recover: 0.6, cost: 20, damage: 22 },
 };
-export const PARRY_WINDOW = 0.32;   // secondes avant l'impact
+export const PARRY_WINDOW = 0.3;    // la garde levée moins de 0,3 s avant l'impact = parade parfaite
+const BLOCK_COST = { light: 5, heavy: 15 };
 const DODGE = { time: 0.38, invuln: 0.28, distance: 2.4, cost: 12 };
 const STAMINA_MAX = 100;
 const STAMINA_REGEN = 24;
@@ -42,6 +44,8 @@ const STRIKE = {
   R: P(-1.3, 0.8, -0.2, 1.45, 0.6, 0.1),
 };
 const REST = P(0, 0, -0.3, 0.45, 0, 0);
+const READY = GUARD.L;
+const BLOCK = P(-1.75, -0.6, -1.15, 1.25, -0.15, -0.05);
 const KEYS = ['ax', 'az', 'ex', 'sw', 'sy', 'sx'];
 
 function lerpPose(a, b, t, out = {}) {
@@ -70,6 +74,9 @@ export class Fighter {
     this.sinceSpend = 99;
     this.guard = 'T';
     this.state = 'guard';
+    this.blockHeld = false;   // la touche de parade est maintenue
+    this.blockStart = -99;    // moment où la garde a été levée
+    this.combo = 0;
     this.stateT = 0;
     this.stateDur = 0;
     this.attack = null;      // { dir, kind, impactDone }
@@ -86,6 +93,13 @@ export class Fighter {
   get canBlock() { return ['guard', 'blockstun', 'hitstun'].includes(this.state); }
   get attacking() { return ['windup', 'strike'].includes(this.state); }
   get alive() { return this.hp > 0; }
+  /** La garde est vraiment levée (on ne peut pas parer en pleine attaque). */
+  get isBlocking() { return this.blockHeld && ['guard', 'blockstun'].includes(this.state) && this.alive; }
+
+  setBlocking(on) {
+    if (on && !this.blockHeld) this.blockStart = this.time;
+    this.blockHeld = on;
+  }
 
   reset() {
     this.hp = this.maxHp;
@@ -114,14 +128,17 @@ export class Fighter {
     this.guard = d;
   }
 
-  /** Lance une attaque ('light' ou 'heavy') dans la direction de la garde. */
+  /** Lance une attaque ('light' ou 'heavy'). */
   tryAttack(kind) {
     if (this.busy || this.exhausted || !this.alive) return false;
     const a = ATTACKS[kind];
     this.spend(a.cost);
-    this.attack = { dir: this.guard, kind, impactDone: false };
+    // Direction de l'animation : les coups légers alternent, les lourds tombent souvent d'en haut
+    this.combo++;
+    const dir = kind === 'heavy' ? (Math.random() < 0.6 ? 'T' : 'L') : (this.combo % 2 ? 'L' : 'R');
+    this.attack = { dir, kind, impactDone: false };
+    this.guard = dir;
     this.setState('windup', a.windup * this.speed);
-    if (kind === 'heavy') this.parry = { dir: this.guard, until: this.time + PARRY_WINDOW + 0.05 };
     return true;
   }
 
@@ -135,14 +152,13 @@ export class Fighter {
     return true;
   }
 
-  /** Le coup lourd du défenseur pare-t-il une attaque venant de la direction d ? */
-  parries(attackDir, parryWindow = PARRY_WINDOW) {
-    return !!this.parry && this.state === 'windup' && !!this.attack && this.attack.kind === 'heavy'
-      && this.parry.dir === mirror(attackDir) && this.stateT <= parryWindow;
+  /** Parade parfaite : la garde a été levée juste avant l'impact. */
+  parries(_dir, parryWindow = PARRY_WINDOW) {
+    return this.isBlocking && this.time - this.blockStart <= parryWindow;
   }
 
-  blocks(attackDir) {
-    return this.canBlock && this.guard === mirror(attackDir);
+  blocks() {
+    return this.isBlocking;
   }
 
   // ---- Réactions ----
@@ -153,7 +169,16 @@ export class Fighter {
     if (this.hp <= 0) this.setState('defeated');
     else this.setState('hitstun', 0.4);
   }
-  blockedHit() { this.setState('blockstun', 0.22); }
+  /** Coup bloqué : coûte de l'endurance. Renvoie true si la garde est brisée. */
+  blockedHit(kind = 'light') {
+    this.spend(BLOCK_COST[kind] || 8);
+    if (this.stamina <= 0) {
+      this.setState('staggered', 0.9);
+      return true;
+    }
+    this.setState('blockstun', kind === 'heavy' ? 0.35 : 0.22);
+    return false;
+  }
   wasBlocked() { this.attack = null; this.setState('recover', 0.45); }
   getParried() {
     this.attack = null;
@@ -174,7 +199,8 @@ export class Fighter {
     // Endurance
     this.sinceSpend += dt;
     if (this.sinceSpend > STAMINA_DELAY && !this.attacking) {
-      this.stamina = Math.min(STAMINA_MAX, this.stamina + STAMINA_REGEN * dt);
+      // L'endurance remonte, deux fois moins vite quand on garde la parade levée
+      this.stamina = Math.min(STAMINA_MAX, this.stamina + STAMINA_REGEN * dt * (this.isBlocking ? 0.5 : 1));
     }
     if (this.exhausted && this.stamina >= EXHAUSTED_UNTIL) this.exhausted = false;
 
@@ -217,16 +243,16 @@ export class Fighter {
       lerpPose(WIND[dir], STRIKE[dir], easeIn(Math.min(1, k * 1.3)), target);
       rate = 45;
     } else if (st === 'recover') {
-      const from = this.attack ? STRIKE[dir] : GUARD[this.guard];
-      lerpPose(from, GUARD[this.guard], easeOut(k), target);
+      const from = this.attack ? STRIKE[dir] : READY;
+      lerpPose(from, READY, easeOut(k), target);
     } else if (st === 'hitstun') {
-      lerpPose(GUARD[this.guard], GUARD[this.guard], 0, target);
+      Object.assign(target, READY);
       target.sx = -0.35 * (1 - k);
       target.sy += Math.sin(k * 9) * 0.1 * (1 - k);
       rate = 20;
     } else if (st === 'blockstun') {
-      Object.assign(target, GUARD[this.guard]);
-      target.sx = -0.12 * (1 - k);
+      Object.assign(target, BLOCK);
+      target.sx = -0.15 * (1 - k);
       rate = 25;
     } else if (st === 'staggered') {
       Object.assign(target, P(-0.4, 0.9, -0.4, 1.0, 0.3, -0.35));
@@ -238,7 +264,8 @@ export class Fighter {
       Object.assign(target, REST);
       rate = 8;
     } else {
-      Object.assign(target, GUARD[this.guard]);
+      Object.assign(target, this.isBlocking ? BLOCK : READY);
+      rate = 18;
     }
     const f = 1 - Math.exp(-dt * rate);
     for (const key of KEYS) this.pose[key] += (target[key] - this.pose[key]) * f;
@@ -252,9 +279,10 @@ export class Fighter {
     if (this.sword) this.sword.rotation.x = this.swordBase + p.sw - 0.45;
     // Bras libre : écu levé devant le corps, ou main en soutien
     if (this.active && st !== 'defeated') {
-      h.armL.rotation.x = this.shield ? -0.55 : -0.7;
+      const up = this.isBlocking || st === 'blockstun';
+      h.armL.rotation.x = this.shield ? (up ? -1.25 : -0.55) : -0.7;
       h.armL.rotation.z = this.shield ? 0 : 0.35;
-      h.elbowL.rotation.x = this.shield ? -1.25 : -1.1;
+      h.elbowL.rotation.x = this.shield ? (up ? -1.45 : -1.25) : -1.1;
     }
   }
 }

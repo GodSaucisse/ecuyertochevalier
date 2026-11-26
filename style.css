@@ -240,3 +240,20 @@ body.touch .controls-touch { display: block; }
 body.touch .controls-desk { display: none; }
 .multi-only { display: none !important; }
 body.in-duel.multi .multi-only { display: inline-block !important; }
+
+/* ---------- Signal de combat (version simple) ---------- */
+.guard-ind .threat {
+  position: absolute; left: 0; top: 0; transform: translate(-50%, -50%);
+  min-width: 0; font-weight: bold; text-align: center; line-height: 1;
+}
+.guard-ind .threat.atk {
+  width: 44px; height: 44px; border-radius: 50%; line-height: 44px; font-size: 1.9rem;
+  color: #fff; background: radial-gradient(circle, #ff3b2a 40%, rgba(255,40,20,0.2) 72%);
+  box-shadow: 0 0 18px #ff2a10; animation: blink 0.14s infinite alternate;
+}
+.guard-ind .threat.atk.heavy {
+  width: 58px; height: 58px; line-height: 58px; font-size: 2.3rem;
+  background: radial-gradient(circle, #ff8a1a 40%, rgba(255,120,20,0.2) 72%); box-shadow: 0 0 24px #ff7a10;
+}
+.guard-ind .threat.guard { font-size: 1.8rem; filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)); }
+.guard-ind.mine .threat.guard { font-size: 1.3rem; filter: drop-shadow(0 0 5px rgba(232,198,106,0.9)); }

@@ -1,7 +1,7 @@
 // Le joueur : l'écuyer.
 import * as THREE from 'three';
-import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611252217';
-import { Fighter } from './combat.js?v=202611252217';
+import { createHumanoid, animateWalk, createSword } from './humanoid.js?v=202611261106';
+import { Fighter } from './combat.js?v=202611261106';
 
 const WALK_SPEED = 4.0;
 const RUN_SPEED = 7.5;
@@ -107,7 +107,7 @@ export class Player {
     if (f.state === 'dodge') {
       vx = f.dodgeVel.x; vz = f.dodgeVel.z;
     } else if (f.alive && !['hitstun', 'staggered', 'defeated'].includes(f.state)) {
-      const slow = f.attacking ? 0.25 : 1;
+      const slow = f.attacking ? 0.25 : f.isBlocking ? 0.5 : 1;
       vx = (fx * move.y - fz * move.x) * 2.6 * slow;
       vz = (fz * move.y + fx * move.x) * 2.6 * slow;
     }

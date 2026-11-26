@@ -41,35 +41,14 @@ Ce fichier permet de reprendre le développement dans n'importe quelle conversat
   - `ambience.js` : vent, oiseaux, cloche de l'église. Sons selon la distance : `atDistance()` dans audio.js.
   - `settings.js` : réglages (volumes, sensibilité, qualité). `map.js` : carte du monde (menu pause).
 
-## Combat (inspiré de For Honor)
-- Garde vue depuis le combattant : 'L' (sa gauche), 'T' (haut), 'R' (sa droite). Une attaque lancée depuis d arrive sur le côté mirror(d) du défenseur.
-- Bloquer : garde du côté de l'indicateur rouge. Parer : coup lourd du même côté dans les 0,32 s avant l'impact (0,5 s pendant la leçon).
-- Commandes ordinateur : souris = garde (ou touches 1/2/3), clic gauche/F = léger, clic droit/R = lourd, Espace = esquive.
-- Commandes mobile : glisser à droite = garde, ⚔️ léger, 💥 lourd, ↶ esquive.
-- Leçons : bloquer ×3, toucher ×3, parer ×1 (passée après 6 essais), puis duel libre. Défaite = on recommence le duel libre.
-- Tester en local : `python3 -m http.server` dans le dossier, puis ouvrir http://localhost:8000
-- **Avant chaque envoi sur GitHub : lancer `python3 tools/version.py`** (change le numéro de version des fichiers pour que les navigateurs chargent la nouvelle version au lieu de celle en cache).
-- Débogage : l'objet `window.game` donne accès au joueur, au monde, aux PNJ et aux quêtes.
-
-## Carte (coordonnées x, z)
-- Départ du joueur : (0, 40), au sud du village.
-- Château : centre (0, -40), murailles de 36 × 36, porte au sud. Donjon en (0, -47).
-- Village : entre z = 15 et z = 50, de part et d'autre du chemin principal (x = 0).
-- Église romane : (-20, 6). Puits : (4, 29). Champ : (38, 38).
-- Terrain d'entraînement : centre (26, 0), entrée à l'ouest. Quintaine en (27.5, 0).
-- Limite du monde : rayon de 90 m.
-
-## Personnages
-- Sire Godefroy de Montclair : le seigneur, ancien de la première croisade.
-- Bertrand : maître d'armes.
-- Mathilde : villageoise.
-- Deux gardes à la porte du château (cotte de mailles, casque à nasal, écu, lance).
-
-## Équipements (humanoid.js, option `outfit`)
-- `gambeson` : écuyer (gambison matelassé, épée de bois).
-- `mail` : homme d'armes (haubert de mailles, camail, casque normand à nasal, écu en amande aux armes de Montclair : d'azur au chevron d'or).
-- `lord` : seigneur (tunique longue, manteau rouge à col de fourrure, épée au côté).
-- `dress` : villageoise (robe longue, voile).
+## Combat (version simple, demandée par le créateur)
+- Pas de directions. Clic gauche = coup léger, clic droit = coup lourd, Maj (maintenir) = parer, Espace = esquiver, Tab = changer de cible.
+- Mobile : ⚔️ léger, 💥 lourd, 🛡 parer (maintenir), ↶ esquive, 🎯 cible.
+- Parer bloque tout mais coûte de l'endurance (léger 5, lourd 15) ; à 0 → garde brisée (étourdi). Endurance : remonte deux fois moins vite garde levée.
+- Parade parfaite : garde levée moins de 0,3 s avant l'impact (0,5 s pendant la leçon) → l'attaquant est déséquilibré.
+- Signal au-dessus des ennemis : « ! » rouge = attaque légère, orange = attaque lourde, 🛡 = il se protège.
+- Leçons de Bertrand : parer ×3, toucher ×3 (quand il baisse sa garde), parade parfaite ×1 (passée après 6 essais), puis duel libre.
+- Les directions L/T/R restent dans combat.js uniquement pour varier les animations.
 
 ## Quête (quests.js, étapes)
 Chapitre I : 0 seigneur → 1 Bertrand → 2 quintaine ×5 → 3 retour à Bertrand → 4 duel → 5 raconter au seigneur
